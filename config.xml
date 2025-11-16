@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets"
+    xmlns:tizen="http://tizen.org/ns/widgets"
+    id="multitwitch.tv.wrapper"
+    version="1.0.0"
+    viewmodes="maximized">
+
+    <tizen:application id="multitwitch.tv.wrapper"
+        package="mtvw"
+        required_version="2.4" />
+    <tizen:profile name="tv" />
+
+    <name>MultiTwitch TV</name>
+    <icon src="icon.png" />
+    <content src="index.html" />
+
+    <description>
+        Simple Tizen TV wrapper for multitwitch.tv allowing multi-channel input.
+    </description>
+
+    <!-- Internet access -->
+    <tizen:privilege name="http://tizen.org/privilege/internet" />
+
+    <!-- Allow navigation to MultiTwitch domain (good practice) -->
+    <tizen:allow-navigation href="https://www.multitwitch.tv/*" />
+    <tizen:allow-navigation href="https://multitwitch.tv/*" />
+
+    <tizen:setting screen-orientation="landscape"
+        context-menu="disable"
+        background-support="disable"
+        encryption="disable" />
+</widget>
