@@ -21,7 +21,7 @@
     <!-- Internet access -->
     <tizen:privilege name="http://tizen.org/privilege/internet" />
 
-    <!-- Allow navigation to MultiTwitch domain (good practice) -->
+    <!-- Allow navigation to MultiTwitch domain -->
     <tizen:allow-navigation href="https://www.multitwitch.tv/*" />
     <tizen:allow-navigation href="https://multitwitch.tv/*" />
 
