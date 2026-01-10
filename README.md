@@ -1,1 +1,1 @@
-# multitwitch-tizen
+# MultiTwitch Tizen
