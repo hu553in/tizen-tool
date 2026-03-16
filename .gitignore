@@ -1,0 +1,6 @@
+.env
+
+dist/
+installer/
+profiles/
+package/

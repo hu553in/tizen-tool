@@ -1,1 +1,1 @@
-# MultiTwitch Tizen
+# MultiTwitch TV Wrapper for Tizen OS
