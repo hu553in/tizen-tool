@@ -10,14 +10,22 @@ from .bundled_resources import build_context_fingerprint, materialize_build_cont
 from .errors import ToolError
 from .paths import temp_root
 from .project_files import copy_project_tree, validate_profiles
-from .runtime import require_command, require_file, run
+from .runtime import log_step, log_success, require_command, run
 from .settings import BuildSettings, CommonSettings, InstallSettings, ResignSettings
 
 IMAGE_LABEL_PREFIX = "com.github.hu553in.tizen.tool"
 IMAGE_LABEL_VERSION = f"{IMAGE_LABEL_PREFIX}.version"
 IMAGE_LABEL_REQUIRED_PACKAGES = f"{IMAGE_LABEL_PREFIX}.required-packages"
-IMAGE_LABEL_INSTALLER_SHA256 = f"{IMAGE_LABEL_PREFIX}.installer-sha256"
 IMAGE_LABEL_BUILD_CONTEXT = f"{IMAGE_LABEL_PREFIX}.build-context-fingerprint"
+
+
+def expected_image_labels(settings: CommonSettings) -> dict[str, str]:
+    required_packages_json = json.dumps(settings.required_packages, separators=(",", ":"))
+    return {
+        IMAGE_LABEL_REQUIRED_PACKAGES: required_packages_json,
+        IMAGE_LABEL_BUILD_CONTEXT: build_context_fingerprint(),
+        IMAGE_LABEL_VERSION: settings.tizen_version,
+    }
 
 
 def inspect_image_labels(image_tag: str) -> dict[str, str] | None:
@@ -57,14 +65,7 @@ def should_rebuild_image(settings: CommonSettings, *, force_rebuild: bool) -> bo
     if labels is None:
         return True
 
-    expected_labels = {
-        IMAGE_LABEL_REQUIRED_PACKAGES: json.dumps(
-            settings.required_packages, separators=(",", ":")
-        ),
-        IMAGE_LABEL_BUILD_CONTEXT: build_context_fingerprint(),
-        IMAGE_LABEL_VERSION: settings.tizen_version,
-        IMAGE_LABEL_INSTALLER_SHA256: settings.tizen_installer_sha256,
-    }
+    expected_labels = expected_image_labels(settings)
     return any(labels.get(key) != value for key, value in expected_labels.items())
 
 
@@ -72,9 +73,11 @@ def ensure_image(settings: CommonSettings, *, force_rebuild: bool) -> None:
     require_command("docker")
 
     if not should_rebuild_image(settings, force_rebuild=force_rebuild):
-        print(f"Using existing Docker image: {settings.image_tag}")
+        log_success(f"Using existing Docker image: {settings.image_tag}")
         return
 
+    log_step(f"Building Docker image: {settings.image_tag}")
+    context_fingerprint = build_context_fingerprint()
     build_temp_root = temp_root()
     build_temp_root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="docker-build-", dir=build_temp_root) as raw_build_dir:
@@ -86,6 +89,7 @@ def ensure_image(settings: CommonSettings, *, force_rebuild: bool) -> None:
             [
                 "docker",
                 "build",
+                "--progress=plain",
                 "-t",
                 settings.image_tag,
                 "--platform",
@@ -95,12 +99,13 @@ def ensure_image(settings: CommonSettings, *, force_rebuild: bool) -> None:
                 "--build-arg",
                 f"REQUIRED_PACKAGES_JSON={required_packages_json}",
                 "--build-arg",
-                f"TIZEN_INSTALLER_SHA256={settings.tizen_installer_sha256}",
+                f"TIZEN_INSTALLER_SHA256={settings.tizen_installer_sha256 or ''}",
                 "--build-arg",
-                f"BUILD_CONTEXT_FINGERPRINT={build_context_fingerprint()}",
+                f"BUILD_CONTEXT_FINGERPRINT={context_fingerprint}",
                 str(build_dir),
             ]
         )
+    log_success(f"Docker image is ready: {settings.image_tag}")
 
 
 def docker_run_tizen(
@@ -130,20 +135,15 @@ def docker_run_tizen(
     )
 
 
-def require_wgt_file(path: Path, description: str) -> None:
-    require_file(path, description)
-    if path.suffix.lower() != ".wgt":
-        raise ToolError(f"{description} must be a .wgt file: {path}")
-
-
 def find_exactly_one_wgt(build_dir: Path) -> Path:
     wgt_files = sorted(build_dir.glob("*.wgt"))
     if len(wgt_files) != 1:
-        raise ToolError(f"Expected exactly one .wgt file, found: {len(wgt_files)}")
+        raise ToolError(f"Expected exactly one .wgt file in {build_dir}, found: {len(wgt_files)}")
     return wgt_files[0]
 
 
 def execute_build(settings: BuildSettings) -> None:
+    log_step(f"Validating signing profile: {settings.profile}")
     validate_profiles(settings.profiles_dir, settings.profile)
     ensure_image(settings, force_rebuild=settings.rebuild)
 
@@ -152,6 +152,7 @@ def execute_build(settings: BuildSettings) -> None:
     with tempfile.TemporaryDirectory(prefix="tizen-build-", dir=build_temp_root) as temp_dir_raw:
         temp_dir = Path(temp_dir_raw)
         package_temp_dir = temp_dir / "package"
+        log_step(f"Copying project files into temporary build directory: {settings.src_dir}")
         copy_project_tree(settings.src_dir, package_temp_dir, settings.buildignore_file)
 
         inner_script = """
@@ -163,6 +164,7 @@ tizen build-web -- /package -out /package/build
 tizen package --type wgt --sign "$profile" -- /package/build
 """.strip()
 
+        log_step("Running Tizen web build and packaging")
         docker_run_tizen(
             settings.image_tag,
             docker_args=[
@@ -180,11 +182,10 @@ tizen package --type wgt --sign "$profile" -- /package/build
         dist_dir.mkdir(parents=True, exist_ok=True)
         output_path = dist_dir / built_wgt.name
         shutil.copy2(built_wgt, output_path)
-        print(f"Built package: {output_path}")
+        log_success(f"Built package: {output_path}")
 
 
 def execute_install(settings: InstallSettings) -> None:
-    require_wgt_file(settings.package_file, "Package file")
     ensure_image(settings, force_rebuild=settings.rebuild)
 
     package_dir = settings.package_file.parent
@@ -207,18 +208,19 @@ fi
 tizen install --name "$package_name" --serial "$tv_serial"
 """.strip()
 
+    log_step(f"Installing package on TV {settings.tv_ip}: {settings.package_file}")
     docker_run_tizen(
         settings.image_tag,
         docker_args=["-v", f"{package_dir}:{package_dir}:ro", "-w", str(package_dir)],
         inner_script=inner_script,
         script_args=[package_name, settings.tv_ip],
     )
-    print(f"Installed package on {settings.tv_ip}: {settings.package_file}")
+    log_success(f"Installed package on {settings.tv_ip}: {settings.package_file}")
 
 
 def execute_resign(settings: ResignSettings) -> None:
+    log_step(f"Validating signing profile: {settings.profile}")
     validate_profiles(settings.profiles_dir, settings.profile)
-    require_wgt_file(settings.package_file, "Package file")
     ensure_image(settings, force_rebuild=settings.rebuild)
 
     package_dir = settings.package_file.parent
@@ -235,6 +237,7 @@ mkdir -p "$resigned_dir"
 tizen package --type wgt --sign "$profile" -o "$resigned_dir" -- "$package_file"
 """.strip()
 
+    log_step(f"Re-signing package: {settings.package_file}")
     docker_run_tizen(
         settings.image_tag,
         docker_args=[
@@ -250,4 +253,4 @@ tizen package --type wgt --sign "$profile" -o "$resigned_dir" -- "$package_file"
     )
 
     resigned_file = resigned_dir / settings.package_file.name
-    print(f"Re-signed package: {resigned_file}")
+    log_success(f"Re-signed package: {resigned_file}")

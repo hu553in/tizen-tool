@@ -31,7 +31,7 @@ RUN useradd -m -s /bin/bash tizen
 USER tizen
 
 COPY --chown=tizen:tizen --chmod=755 install_tizen_studio.py /home/tizen/install_tizen_studio.py
-RUN python3 /home/tizen/install_tizen_studio.py
+RUN python3 -u /home/tizen/install_tizen_studio.py
 RUN tizen version && command -v sdb
 
 WORKDIR /home/tizen/project

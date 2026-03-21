@@ -14,9 +14,9 @@ It provides:
 
 - a reproducible Tizen Studio setup inside Docker
 - `build`, `resign`, and `install` commands
-- strict configuration loading from CLI arguments and `.env`
-- installer checksum verification
-- Docker image reuse keyed by the tool version, required packages, and bundled Docker resources
+- strict configuration loading from CLI arguments, environment variables, and `.env`
+- optional installer checksum verification
+- Docker image reuse keyed by the Tizen Studio version, required packages, and bundled Docker resources
 
 The project is intentionally small. It is designed to remain predictable, easy to audit,
 and simple to run from a single working directory.
@@ -58,6 +58,12 @@ The default local development version is Python 3.14, as defined in
 uv tool install tizen-tool
 ```
 
+Run without installing:
+
+```bash
+uvx tizen-tool --help
+```
+
 You can also use `pipx`:
 
 ```bash
@@ -70,17 +76,27 @@ pipx install tizen-tool
 make install_deps
 ```
 
+Run the tool from a repository checkout with:
+
+```bash
+uv run tizen-tool --help
+```
+
 ---
 
 ## Configuration
 
-The tool reads `.env` from the current working directory. CLI arguments override `.env` values.
+The tool reads `.env` from the current working directory. The effective precedence is:
+
+1. CLI arguments
+2. Environment variables
+3. `.env`
 
 | Name                                                               | Required         | Description                                                                                          |
 | ------------------------------------------------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------- |
 | `TIZEN_VERSION`                                                    | Yes              | Tizen Studio version used to resolve the installer URL.                                              |
 | `REQUIRED_PACKAGES`                                                | Yes              | JSON array of Tizen package IDs installed into the Docker image.                                     |
-| `TIZEN_INSTALLER_SHA256`                                           | Yes              | Expected SHA-256 checksum for the installer binary.                                                  |
+| `TIZEN_INSTALLER_SHA256`                                           | No               | Optional SHA-256 checksum used to verify the installer binary before execution.                      |
 | `PROFILES_DIR`                                                     | Build / resign   | Directory containing `profiles.xml`. Relative paths are resolved from the current working directory. |
 | `PROFILE`                                                          | Build / resign   | Signing profile name from `profiles.xml`.                                                            |
 | `TV_IP`                                                            | Install          | TV address or serial. Accepted forms: `host`, `host:port`, `IPv4`, or `[IPv6]:port`.                 |
@@ -120,6 +136,12 @@ Install a package on the configured TV:
 
 ```bash
 tizen-tool install /path/to/app.wgt
+```
+
+Print LAN IPv4 addresses by interface for TV Developer Mode:
+
+```bash
+tizen-tool get-lan-ips
 ```
 
 Override the TV target from the CLI:
@@ -188,7 +210,7 @@ make check
 
 ## Release
 
-Create a release from the `main` branch with a clean working tree:
+Create a release from the `main` branch with no tracked changes in the working tree:
 
 ```bash
 make release V=0.1.0
@@ -202,6 +224,7 @@ The `release` target:
 - updates the version if `V` differs from the current project version
 - commits and pushes the version bump when needed
 - creates and pushes the annotated tag `v<V>`
+- can publish an existing version by pushing only the tag when `V` already matches the current version
 
 GitHub Actions publishes tagged releases to PyPI from
 [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).

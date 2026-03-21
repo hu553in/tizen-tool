@@ -5,6 +5,7 @@ from importlib.resources import files
 from pathlib import Path
 
 RESOURCE_PACKAGE = "tizen_tool.resources"
+BUILD_CONTEXT_FILES = ("Dockerfile", "install_tizen_studio.py")
 
 
 def resource_bytes(relative_path: str) -> bytes:
@@ -13,7 +14,7 @@ def resource_bytes(relative_path: str) -> bytes:
 
 def build_context_fingerprint() -> str:
     hasher = hashlib.sha256()
-    for relative_path in ("Dockerfile", "install_tizen_studio.py"):
+    for relative_path in BUILD_CONTEXT_FILES:
         content = resource_bytes(relative_path)
         hasher.update(relative_path.encode("utf-8"))
         hasher.update(b"\0")
@@ -24,5 +25,5 @@ def build_context_fingerprint() -> str:
 
 def materialize_build_context(target_dir: Path) -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
-    (target_dir / "Dockerfile").write_bytes(resource_bytes("Dockerfile"))
-    (target_dir / "install_tizen_studio.py").write_bytes(resource_bytes("install_tizen_studio.py"))
+    for relative_path in BUILD_CONTEXT_FILES:
+        (target_dir / relative_path).write_bytes(resource_bytes(relative_path))

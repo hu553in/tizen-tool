@@ -18,6 +18,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
       - uses: astral-sh/setup-uv@v7
       - run: make install_deps
       - uses: actions/cache@v5
@@ -42,6 +45,9 @@ jobs:
       url: https://pypi.org/p/tizen-tool
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
       - uses: astral-sh/setup-uv@v7
       - run: make install_deps
       - run: make build

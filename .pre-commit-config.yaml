@@ -56,7 +56,6 @@ repos:
     hooks:
       - id: bandit
         stages: [pre-commit]
-        args: [-ll]
   - repo: local
     hooks:
       - id: check-types

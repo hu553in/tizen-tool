@@ -1,7 +1,7 @@
 [project]
 name = "tizen-tool"
 version = "0.1.0"
-description = "tizen-tool is a small CLI for building, re-signing, and installing Tizen web packages through a Dockerized Tizen Studio environment"
+description = "Small CLI for building, re-signing, and installing Tizen web packages through a Dockerized Tizen Studio environment"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -44,6 +44,7 @@ classifiers = [
 
 dependencies = [
   "defusedxml==0.7.1",
+  "ifaddr==0.2.0",
   "pathspec==1.0.4",
   "pydantic-settings==2.13.1",
   "typer==0.24.1",

@@ -19,11 +19,12 @@ from .errors import ToolError
 from .paths import env_file_path, working_directory
 
 DEFAULT_TV_PORT = 26101
+MAX_PORT = 65535
 SHA256_HEX_LENGTH = 64
 SettingsT = TypeVar("SettingsT", bound="CommonSettings")
 
 
-def resolve_project_path(value: Any) -> Path:
+def resolve_working_path(value: Any) -> Path:
     path = Path(value).expanduser()
     if not path.is_absolute():
         path = working_directory() / path
@@ -41,6 +42,13 @@ def normalize_tv_serial(raw_value: str) -> str:
     if not value:
         raise ValueError("must not be empty")
 
+    def validate_port(port: str) -> str:
+        if not port.isdigit():
+            raise ValueError("must use a numeric port")
+        if not 1 <= int(port) <= MAX_PORT:
+            raise ValueError("must use a port in the range 1-65535")
+        return port
+
     if value.startswith("["):
         if "]" not in value:
             raise ValueError("uses bracketed IPv6 syntax but is missing a closing bracket")
@@ -52,8 +60,9 @@ def normalize_tv_serial(raw_value: str) -> str:
 
         if remainder == "":
             return f"[{host}]:{DEFAULT_TV_PORT}"
-        if not remainder.startswith(":") or not remainder[1:].isdigit():
+        if not remainder.startswith(":"):
             raise ValueError("must use [IPv6]:port when specifying a port for IPv6")
+        validate_port(remainder[1:])
         return value
 
     if value.count(":") > 1:
@@ -67,9 +76,20 @@ def normalize_tv_serial(raw_value: str) -> str:
         return f"{value}:{DEFAULT_TV_PORT}"
 
     host, port = value.rsplit(":", 1)
-    if not host or not port.isdigit():
+    if not host:
         raise ValueError("must use host:port when specifying a port")
+    validate_port(port)
     return value
+
+
+def normalize_package_file_path(value: Any) -> Path:
+    return resolve_working_path(value)
+
+
+def validate_wgt_path(path: Path) -> Path:
+    if path.suffix.lower() != ".wgt":
+        raise ValueError("must point to a .wgt file")
+    return path
 
 
 class CommonSettings(BaseSettings):
@@ -82,7 +102,9 @@ class CommonSettings(BaseSettings):
 
     tizen_version: str = Field(validation_alias="TIZEN_VERSION")
     required_packages: list[str] = Field(validation_alias="REQUIRED_PACKAGES")
-    tizen_installer_sha256: str = Field(validation_alias="TIZEN_INSTALLER_SHA256")
+    tizen_installer_sha256: str | None = Field(
+        default=None, validation_alias="TIZEN_INSTALLER_SHA256"
+    )
     profiles_dir: DirectoryPath | None = Field(default=None, validation_alias="PROFILES_DIR")
     profile: str | None = Field(default=None, validation_alias="PROFILE")
     tv_ip: str | None = Field(default=None, validation_alias="TV_IP")
@@ -95,14 +117,23 @@ class CommonSettings(BaseSettings):
     @field_validator("required_packages")
     @classmethod
     def validate_required_packages(cls, value: list[str]) -> list[str]:
-        packages = [package.strip() for package in value if package.strip()]
+        packages: list[str] = []
+        seen: set[str] = set()
+        for package in value:
+            normalized = package.strip()
+            if not normalized or normalized in seen:
+                continue
+            packages.append(normalized)
+            seen.add(normalized)
         if not packages:
             raise ValueError("must list at least one package")
         return packages
 
     @field_validator("tizen_installer_sha256")
     @classmethod
-    def validate_installer_sha256(cls, value: str) -> str:
+    def validate_installer_sha256(cls, value: str | None) -> str | None:
+        if value in (None, ""):
+            return None
         normalized = value.strip().lower()
         if len(normalized) != SHA256_HEX_LENGTH or any(
             ch not in "0123456789abcdef" for ch in normalized
@@ -115,7 +146,7 @@ class CommonSettings(BaseSettings):
     def normalize_profiles_dir(cls, value: Any) -> Path | None:
         if value in (None, ""):
             return None
-        return resolve_project_path(value)
+        return resolve_working_path(value)
 
 
 class BuildSettings(CommonSettings):
@@ -130,14 +161,14 @@ class BuildSettings(CommonSettings):
     @field_validator("src_dir", mode="before")
     @classmethod
     def normalize_src_dir(cls, value: Any) -> Path:
-        return resolve_project_path(value)
+        return resolve_working_path(value)
 
     @field_validator("buildignore_file", mode="before")
     @classmethod
     def normalize_buildignore_file(cls, value: Any) -> Path | None:
         if value in (None, ""):
             return None
-        return resolve_project_path(value)
+        return resolve_working_path(value)
 
 
 class InstallSettings(CommonSettings):
@@ -152,7 +183,12 @@ class InstallSettings(CommonSettings):
     @field_validator("package_file", mode="before")
     @classmethod
     def normalize_package_file(cls, value: Any) -> Path:
-        return resolve_project_path(value)
+        return normalize_package_file_path(value)
+
+    @field_validator("package_file")
+    @classmethod
+    def validate_package_file(cls, value: Path) -> Path:
+        return validate_wgt_path(value)
 
     @field_validator("tv_ip")
     @classmethod
@@ -171,7 +207,12 @@ class ResignSettings(CommonSettings):
     @field_validator("package_file", mode="before")
     @classmethod
     def normalize_package_file(cls, value: Any) -> Path:
-        return resolve_project_path(value)
+        return normalize_package_file_path(value)
+
+    @field_validator("package_file")
+    @classmethod
+    def validate_package_file(cls, value: Path) -> Path:
+        return validate_wgt_path(value)
 
 
 def format_validation_error(exc: ValidationError) -> str:

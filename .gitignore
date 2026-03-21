@@ -4,9 +4,10 @@
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.coverage
 build/
 dist/
 *.egg-info/
 .env
 __pycache__/
+*.py[cod]
+.DS_Store
