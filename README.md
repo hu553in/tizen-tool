@@ -1,6 +1,7 @@
 # Tizen tool
 
 [![CI](https://github.com/hu553in/tizen-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/hu553in/tizen-tool/actions/workflows/ci.yml)
+[![PyPI - Version](https://img.shields.io/pypi/v/tizen-tool)](https://pypi.org/project/tizen-tool/)
 
 - [License](./LICENSE)
 - [How to contribute](./CONTRIBUTING.md)
