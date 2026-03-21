@@ -2,6 +2,8 @@ SHELL := /bin/bash
 .ONESHELL:
 .SHELLFLAGS := -euo pipefail -c
 
+MAIN_BRANCH ?= main
+
 .PHONY: install_deps
 install_deps:
 	uv sync --all-groups --frozen
