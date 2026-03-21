@@ -12,13 +12,17 @@ maintainers = [{ name = "Ruslan Khasanshin" }]
 keywords = [
   "tizen",
   "tizen-studio",
-  "wgt",
-  "docker",
+  "tizen-tv",
   "samsung-tv",
+  "cli",
+  "docker",
+  "wgt",
   "web-app",
   "packaging",
   "signing",
   "deployment",
+  "developer-tools",
+  "automation",
 ]
 
 classifiers = [
