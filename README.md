@@ -187,12 +187,20 @@ make check
 
 ## Release
 
-Build distributions locally:
+Create a release from the `main` branch with a clean working tree:
 
 ```bash
-make build
+make release V=0.1.0
 ```
+
+The `release` target:
+
+- installs dependencies
+- runs the local checks
+- builds distributions
+- updates the version if `V` differs from the current project version
+- commits and pushes the version bump when needed
+- creates and pushes the annotated tag `v<V>`
 
 GitHub Actions publishes tagged releases to PyPI from
 [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
-Push a `v*` tag after the CI job passes.
