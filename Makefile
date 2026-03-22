@@ -66,7 +66,7 @@ release: install_deps check build
 	fi; \
 	echo "🚀 Releasing $$TAG"; \
 	if [[ ! "$(V)" = "$$(uv version --short)" ]]; then \
-		uv version "$(V)" --frozen --no-sync; \
+		uv version "$(V)" --no-sync; \
 		git commit -am "chore(release): $$TAG"; \
 		git push origin "$(MAIN_BRANCH)"; \
 	fi; \
