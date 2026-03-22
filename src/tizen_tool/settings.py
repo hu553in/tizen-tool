@@ -16,11 +16,11 @@ from pydantic import (
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .errors import ToolError
-from .paths import env_file_path, working_directory
+from .paths import cache_root, env_file_path, working_directory
 
 DEFAULT_TV_PORT = 26101
 MAX_PORT = 65535
-SHA256_HEX_LENGTH = 64
+MIN_SUPPORTED_TIZEN_VERSION = (3, 7)
 SettingsT = TypeVar("SettingsT", bound="CommonSettings")
 
 
@@ -92,6 +92,13 @@ def validate_wgt_path(path: Path) -> Path:
     return path
 
 
+def parse_tizen_version(version: str) -> tuple[int, ...]:
+    parts = version.strip().split(".")
+    if not parts or any(not part.isdigit() for part in parts):
+        raise ValueError("must use a numeric dotted version such as 3.7 or 10.0")
+    return tuple(int(part) for part in parts)
+
+
 class CommonSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=str(env_file_path()),
@@ -102,9 +109,7 @@ class CommonSettings(BaseSettings):
 
     tizen_version: str = Field(validation_alias="TIZEN_VERSION")
     required_packages: list[str] = Field(validation_alias="REQUIRED_PACKAGES")
-    tizen_installer_sha256: str | None = Field(
-        default=None, validation_alias="TIZEN_INSTALLER_SHA256"
-    )
+    cache_dir: Path = Field(default_factory=cache_root, validation_alias="CACHE_DIR")
     profiles_dir: DirectoryPath | None = Field(default=None, validation_alias="PROFILES_DIR")
     profile: str | None = Field(default=None, validation_alias="PROFILE")
     tv_ip: str | None = Field(default=None, validation_alias="TV_IP")
@@ -113,6 +118,19 @@ class CommonSettings(BaseSettings):
     @property
     def image_tag(self) -> str:
         return f"tizen-studio:{self.tizen_version}"
+
+    @field_validator("tizen_version")
+    @classmethod
+    def validate_tizen_version(cls, value: str) -> str:
+        version = value.strip()
+        if parse_tizen_version(version) < MIN_SUPPORTED_TIZEN_VERSION:
+            min_version = ".".join(str(part) for part in MIN_SUPPORTED_TIZEN_VERSION)
+            raise ValueError(
+                "must be "
+                f"{min_version} or newer because older Tizen Studio installers "
+                "require a preinstalled Java runtime"
+            )
+        return version
 
     @field_validator("required_packages")
     @classmethod
@@ -129,17 +147,12 @@ class CommonSettings(BaseSettings):
             raise ValueError("must list at least one package")
         return packages
 
-    @field_validator("tizen_installer_sha256")
+    @field_validator("cache_dir", mode="before")
     @classmethod
-    def validate_installer_sha256(cls, value: str | None) -> str | None:
+    def normalize_cache_dir(cls, value: Any) -> Path:
         if value in (None, ""):
-            return None
-        normalized = value.strip().lower()
-        if len(normalized) != SHA256_HEX_LENGTH or any(
-            ch not in "0123456789abcdef" for ch in normalized
-        ):
-            raise ValueError("must be a 64-character hexadecimal SHA-256 digest")
-        return normalized
+            return cache_root()
+        return resolve_working_path(value)
 
     @field_validator("profiles_dir", mode="before")
     @classmethod

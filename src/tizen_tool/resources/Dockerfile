@@ -5,7 +5,6 @@ ARG REQUIRED_PACKAGES_JSON
 ARG TIZEN_INSTALLER_SHA256
 ARG BUILD_CONTEXT_FINGERPRINT
 
-ENV TIZEN_VERSION=$TIZEN_VERSION
 ENV REQUIRED_PACKAGES_JSON=$REQUIRED_PACKAGES_JSON
 ENV TIZEN_INSTALLER_SHA256=$TIZEN_INSTALLER_SHA256
 
@@ -16,13 +15,11 @@ LABEL com.github.hu553in.tizen.tool.build-context-fingerprint="$BUILD_CONTEXT_FI
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
-ENV JAVA_HOME=/usr/lib/jvm/default-java
 ENV PATH="$PATH:/home/tizen/tizen-studio/tools:/home/tizen/tizen-studio/tools/ide/bin"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
-    default-jre \
     python3 \
     unzip && \
     rm -rf /var/lib/apt/lists/*
@@ -31,6 +28,7 @@ RUN useradd -m -s /bin/bash tizen
 USER tizen
 
 COPY --chown=tizen:tizen --chmod=755 install_tizen_studio.py /home/tizen/install_tizen_studio.py
+COPY --chown=tizen:tizen installer.bin /home/tizen/installer.bin
 RUN python3 -u /home/tizen/install_tizen_studio.py
 RUN tizen version && command -v sdb
 

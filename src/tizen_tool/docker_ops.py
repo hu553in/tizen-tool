@@ -8,9 +8,10 @@ from pathlib import Path
 
 from .bundled_resources import build_context_fingerprint, materialize_build_context
 from .errors import ToolError
-from .paths import temp_root
+from .installer_cache import ensure_cached_installer
+from .paths import installer_cache_root, temp_root
 from .project_files import copy_project_tree, validate_profiles
-from .runtime import log_step, log_success, require_command, run
+from .runtime import ensure_ignored_directory, log_step, log_success, require_command, run
 from .settings import BuildSettings, CommonSettings, InstallSettings, ResignSettings
 
 IMAGE_LABEL_PREFIX = "com.github.hu553in.tizen.tool"
@@ -71,6 +72,7 @@ def should_rebuild_image(settings: CommonSettings, *, force_rebuild: bool) -> bo
 
 def ensure_image(settings: CommonSettings, *, force_rebuild: bool) -> None:
     require_command("docker")
+    ensure_ignored_directory(settings.cache_dir)
 
     if not should_rebuild_image(settings, force_rebuild=force_rebuild):
         log_success(f"Using existing Docker image: {settings.image_tag}")
@@ -78,11 +80,20 @@ def ensure_image(settings: CommonSettings, *, force_rebuild: bool) -> None:
 
     log_step(f"Building Docker image: {settings.image_tag}")
     context_fingerprint = build_context_fingerprint()
-    build_temp_root = temp_root()
-    build_temp_root.mkdir(parents=True, exist_ok=True)
+    cached_installer = ensure_cached_installer(
+        settings.tizen_version, installer_cache_root(settings.cache_dir)
+    )
+    build_temp_root = temp_root(settings.cache_dir)
+    ensure_ignored_directory(build_temp_root)
     with tempfile.TemporaryDirectory(prefix="docker-build-", dir=build_temp_root) as raw_build_dir:
         build_dir = Path(raw_build_dir)
-        materialize_build_context(build_dir)
+        try:
+            materialize_build_context(build_dir)
+            shutil.copy2(cached_installer.installer_path, build_dir / "installer.bin")
+        except OSError as exc:
+            raise ToolError(
+                f"Failed to prepare Docker build context in {build_dir}: {exc}"
+            ) from exc
         required_packages_json = json.dumps(settings.required_packages, separators=(",", ":"))
 
         run(
@@ -99,7 +110,7 @@ def ensure_image(settings: CommonSettings, *, force_rebuild: bool) -> None:
                 "--build-arg",
                 f"REQUIRED_PACKAGES_JSON={required_packages_json}",
                 "--build-arg",
-                f"TIZEN_INSTALLER_SHA256={settings.tizen_installer_sha256 or ''}",
+                f"TIZEN_INSTALLER_SHA256={cached_installer.sha256}",
                 "--build-arg",
                 f"BUILD_CONTEXT_FINGERPRINT={context_fingerprint}",
                 str(build_dir),
@@ -147,8 +158,8 @@ def execute_build(settings: BuildSettings) -> None:
     validate_profiles(settings.profiles_dir, settings.profile)
     ensure_image(settings, force_rebuild=settings.rebuild)
 
-    build_temp_root = temp_root()
-    build_temp_root.mkdir(parents=True, exist_ok=True)
+    build_temp_root = temp_root(settings.cache_dir)
+    ensure_ignored_directory(build_temp_root)
     with tempfile.TemporaryDirectory(prefix="tizen-build-", dir=build_temp_root) as temp_dir_raw:
         temp_dir = Path(temp_dir_raw)
         package_temp_dir = temp_dir / "package"
@@ -179,7 +190,7 @@ tizen package --type wgt --sign "$profile" -- /package/build
 
         built_wgt = find_exactly_one_wgt(package_temp_dir / "build")
         dist_dir = settings.src_dir / "dist"
-        dist_dir.mkdir(parents=True, exist_ok=True)
+        ensure_ignored_directory(dist_dir)
         output_path = dist_dir / built_wgt.name
         shutil.copy2(built_wgt, output_path)
         log_success(f"Built package: {output_path}")
@@ -195,6 +206,7 @@ def execute_install(settings: InstallSettings) -> None:
 trap 'cat /home/tizen/tizen-studio-data/cli/logs/cli.log 2>/dev/null || true' ERR
 package_name="$1"
 tv_serial="$2"
+package_dir="$3"
 
 cleanup() {
   sdb disconnect "$tv_serial" >/dev/null 2>&1 || true
@@ -205,7 +217,7 @@ if ! sdb devices | awk 'NR > 1 {print $1}' | grep -Fx -- "$tv_serial" >/dev/null
   sdb connect "$tv_serial"
 fi
 
-tizen install --name "$package_name" --serial "$tv_serial"
+tizen install --name "$package_name" --serial "$tv_serial" -- "$package_dir"
 """.strip()
 
     log_step(f"Installing package on TV {settings.tv_ip}: {settings.package_file}")
@@ -213,7 +225,7 @@ tizen install --name "$package_name" --serial "$tv_serial"
         settings.image_tag,
         docker_args=["-v", f"{package_dir}:{package_dir}:ro", "-w", str(package_dir)],
         inner_script=inner_script,
-        script_args=[package_name, settings.tv_ip],
+        script_args=[package_name, settings.tv_ip, str(package_dir)],
     )
     log_success(f"Installed package on {settings.tv_ip}: {settings.package_file}")
 
@@ -225,6 +237,7 @@ def execute_resign(settings: ResignSettings) -> None:
 
     package_dir = settings.package_file.parent
     resigned_dir = package_dir / "resigned"
+    ensure_ignored_directory(resigned_dir)
 
     inner_script = """
 trap 'cat /home/tizen/tizen-studio-data/cli/logs/cli.log 2>/dev/null || true' ERR
@@ -233,7 +246,6 @@ package_file="$2"
 resigned_dir="$3"
 
 tizen cli-config profiles.path=/profiles/profiles.xml
-mkdir -p "$resigned_dir"
 tizen package --type wgt --sign "$profile" -o "$resigned_dir" -- "$package_file"
 """.strip()
 

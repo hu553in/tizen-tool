@@ -82,16 +82,14 @@ ResignRebuildOption = Annotated[
 ]
 TizenVersionOption = Annotated[
     str | None,
-    typer.Option("--tizen-version", help="Tizen Studio version. Falls back to TIZEN_VERSION."),
-]
-InstallerSha256Option = Annotated[
-    str | None,
     typer.Option(
-        "--tizen-installer-sha256",
-        help=(
-            "Optional installer SHA-256 digest used for verification. "
-            "Falls back to TIZEN_INSTALLER_SHA256."
-        ),
+        "--tizen-version", help="Tizen Studio version (3.7 or newer). Falls back to TIZEN_VERSION."
+    ),
+]
+CacheDirOption = Annotated[
+    Path | None,
+    typer.Option(
+        "--cache-dir", help=("Directory used for application cache files. Falls back to CACHE_DIR.")
     ),
 ]
 RequiredPackageOption = Annotated[
@@ -131,7 +129,7 @@ def build_command(  # noqa: PLR0913
     buildignore_file: BuildIgnoreFileArgument = None,
     rebuild: BuildRebuildOption = None,
     tizen_version: TizenVersionOption = None,
-    tizen_installer_sha256: InstallerSha256Option = None,
+    cache_dir: CacheDirOption = None,
     required_package: RequiredPackageOption = None,
     profiles_dir: ProfilesDirOption = None,
     profile: ProfileOption = None,
@@ -142,7 +140,7 @@ def build_command(  # noqa: PLR0913
         buildignore_file=resolve_cli_path(buildignore_file),
         rebuild=rebuild,
         tizen_version=tizen_version,
-        tizen_installer_sha256=tizen_installer_sha256,
+        cache_dir=resolve_cli_path(cache_dir),
         required_packages=required_package,
         profiles_dir=resolve_cli_path(profiles_dir),
         profile=profile,
@@ -155,7 +153,7 @@ def install_command(  # noqa: PLR0913
     package_file: InstallPackageFileArgument = None,
     rebuild: InstallRebuildOption = None,
     tizen_version: TizenVersionOption = None,
-    tizen_installer_sha256: InstallerSha256Option = None,
+    cache_dir: CacheDirOption = None,
     tv_ip: TvIpOption = None,
     required_package: RequiredPackageOption = None,
 ) -> None:
@@ -164,7 +162,7 @@ def install_command(  # noqa: PLR0913
         package_file=resolve_cli_path(package_file),
         rebuild=rebuild,
         tizen_version=tizen_version,
-        tizen_installer_sha256=tizen_installer_sha256,
+        cache_dir=resolve_cli_path(cache_dir),
         tv_ip=tv_ip,
         required_packages=required_package,
     )
@@ -176,7 +174,7 @@ def resign_command(  # noqa: PLR0913
     package_file: ResignPackageFileArgument = None,
     rebuild: ResignRebuildOption = None,
     tizen_version: TizenVersionOption = None,
-    tizen_installer_sha256: InstallerSha256Option = None,
+    cache_dir: CacheDirOption = None,
     required_package: RequiredPackageOption = None,
     profiles_dir: ProfilesDirOption = None,
     profile: ProfileOption = None,
@@ -186,7 +184,7 @@ def resign_command(  # noqa: PLR0913
         package_file=resolve_cli_path(package_file),
         rebuild=rebuild,
         tizen_version=tizen_version,
-        tizen_installer_sha256=tizen_installer_sha256,
+        cache_dir=resolve_cli_path(cache_dir),
         required_packages=required_package,
         profiles_dir=resolve_cli_path(profiles_dir),
         profile=profile,

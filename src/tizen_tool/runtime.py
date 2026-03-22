@@ -11,6 +11,9 @@ import ifaddr
 
 from .errors import ToolError
 
+GITIGNORE_FILE_NAME = ".gitignore"
+GITIGNORE_FILE_CONTENT = "*\n"
+
 
 def log_step(message: str) -> None:
     print(f"==> {message}", flush=True)
@@ -39,12 +42,17 @@ def run(
 
 def require_command(name: str) -> None:
     if shutil.which(name) is None:
-        raise ToolError(f"Required command is not installed or not in PATH: {name}")
+        raise ToolError(f"Required command is not installed or not in PATH: '{name}'")
 
 
-def require_file(path: Path, description: str = "File") -> None:
-    if not path.is_file():
-        raise ToolError(f"{description} is not found: {path}")
+def ensure_ignored_directory(path: Path) -> None:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        ignore_file = path / GITIGNORE_FILE_NAME
+        if not ignore_file.exists():
+            ignore_file.write_text(GITIGNORE_FILE_CONTENT, encoding="utf-8")
+    except OSError as exc:
+        raise ToolError(f"Failed to prepare directory {path}: {exc}") from exc
 
 
 def get_lan_ips() -> list[tuple[str, list[str]]]:

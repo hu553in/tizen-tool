@@ -5,30 +5,18 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import stat
 import subprocess  # nosec B404
-import time
-import urllib.request
-from dataclasses import dataclass
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
 
-DOWNLOAD_ATTEMPTS = 3
-DOWNLOAD_RETRY_DELAY_SECONDS = 1
-DOWNLOAD_SOCKET_TIMEOUT_SECONDS = 30
-DOWNLOAD_PROGRESS_CHUNK_BYTES = 50 * 1024 * 1024
 SHA256_HEX_LENGTH = 64
-
-
-@dataclass(frozen=True)
-class InstallerCandidate:
-    name: str
-    url: str
-
-
-class InstallerCandidateError(RuntimeError):
-    """Raised when a specific installer candidate cannot be used."""
+INSTALLER_PATH = Path("/home/tizen/installer.bin")
+PACKAGE_MANAGER_PATH = Path("/home/tizen/tizen-studio/package-manager/package-manager-cli.bin")
+SHOW_PACKAGES_PATTERN = re.compile(
+    r"^\s*(?P<status>[a-z]{1,3})\s+(?P<package>[A-Za-z0-9][A-Za-z0-9._+-]*)\s+"
+)
+INSTALLED_PACKAGE_STATUSES = {"i", "u"}
 
 
 def log(message: str) -> None:
@@ -46,53 +34,10 @@ def getenv_required(name: str) -> str:
     return value
 
 
-def getenv_optional(name: str) -> str | None:
-    value = os.environ.get(name, "").strip()
-    return value or None
-
-
-def run(args: list[str]) -> None:
-    subprocess.run(args, check=True)  # nosec B603
-
-
-def download_file(url: str, destination: Path) -> None:
-    parsed = urlparse(url)
-    if parsed.scheme != "https":
-        raise InstallerCandidateError(f"Installer URL must use https: {url}")
-
-    last_error: OSError | HTTPError | URLError | RuntimeError | None = None
-    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
-        try:
-            log(f"Downloading installer (attempt {attempt}/{DOWNLOAD_ATTEMPTS}): {url}")
-            bytes_written = 0
-            next_progress_threshold = DOWNLOAD_PROGRESS_CHUNK_BYTES
-            with (
-                urllib.request.urlopen(  # nosec B310
-                    url, timeout=DOWNLOAD_SOCKET_TIMEOUT_SECONDS
-                ) as response,
-                destination.open("wb") as output,
-            ):
-                while True:
-                    chunk = response.read(1024 * 1024)
-                    if not chunk:
-                        break
-                    output.write(chunk)
-                    bytes_written += len(chunk)
-                    if bytes_written >= next_progress_threshold:
-                        log(f"Downloaded installer payload: {bytes_written // (1024 * 1024)} MiB")
-                        next_progress_threshold += DOWNLOAD_PROGRESS_CHUNK_BYTES
-            log_success(
-                f"Finished downloading installer payload: {bytes_written // (1024 * 1024)} MiB"
-            )
-            return
-        except (HTTPError, OSError, URLError) as exc:
-            last_error = exc
-            log(f"Download attempt failed: {exc}")
-            if attempt == DOWNLOAD_ATTEMPTS:
-                break
-            time.sleep(DOWNLOAD_RETRY_DELAY_SECONDS)
-
-    raise InstallerCandidateError(f"Failed to download installer from {url}: {last_error}")
+def run(
+    args: list[str], *, check: bool = True, capture_output: bool = False
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(args, check=check, text=True, capture_output=capture_output)  # nosec B603
 
 
 def sha256_file(path: Path) -> str:
@@ -103,10 +48,7 @@ def sha256_file(path: Path) -> str:
     return hasher.hexdigest()
 
 
-def normalize_expected_sha256(raw_value: str | None) -> str | None:
-    if raw_value is None:
-        return None
-
+def normalize_sha256(raw_value: str) -> str:
     normalized = raw_value.strip().lower()
     if len(normalized) != SHA256_HEX_LENGTH or any(
         character not in "0123456789abcdef" for character in normalized
@@ -115,126 +57,140 @@ def normalize_expected_sha256(raw_value: str | None) -> str | None:
     return normalized
 
 
-def installer_candidates(tizen_version: str) -> list[InstallerCandidate]:
-    return [
-        InstallerCandidate(
-            name=f"web-cli_Tizen_SDK_{tizen_version}_ubuntu-64.bin",
-            url=(
-                "https://download.tizen.org/sdk/Installer/"
-                f"tizen-sdk_{tizen_version}/"
-                f"web-cli_Tizen_SDK_{tizen_version}_ubuntu-64.bin"
-            ),
-        ),
-        InstallerCandidate(
-            name=f"web-cli_Tizen_Studio_{tizen_version}_ubuntu-64.bin",
-            url=(
-                "https://download.tizen.org/sdk/Installer/"
-                f"tizen-studio_{tizen_version}/"
-                f"web-cli_Tizen_Studio_{tizen_version}_ubuntu-64.bin"
-            ),
-        ),
-    ]
+def normalize_output(stdout: str, stderr: str) -> str:
+    return "\n".join(part for part in (stdout.strip(), stderr.strip()) if part).strip()
 
 
-def verify_installer_checksum(installer_path: Path, expected_sha256: str | None) -> None:
-    if expected_sha256 is None:
-        log("Skipping installer checksum verification")
-        return
+def format_output(output: str) -> str:
+    return output if output else "no diagnostic output"
 
-    log("Verifying installer checksum")
-    actual_sha256 = sha256_file(installer_path)
-    if actual_sha256 != expected_sha256:
-        raise InstallerCandidateError(
-            f"Installer checksum mismatch: expected {expected_sha256}, got {actual_sha256}"
+
+def parse_show_packages(output: str) -> dict[str, str]:
+    packages: dict[str, str] = {}
+    for line in output.splitlines():
+        match = SHOW_PACKAGES_PATTERN.match(line)
+        if match is None:
+            continue
+        packages[match.group("package")] = match.group("status").lower()
+    return packages
+
+
+def show_packages() -> dict[str, str]:
+    result = run(
+        [str(PACKAGE_MANAGER_PATH), "show-pkgs", "--tree"], check=False, capture_output=True
+    )
+    output = normalize_output(result.stdout, result.stderr)
+
+    if result.returncode != 0:
+        details = format_output(output)
+        raise SystemExit(
+            f"Failed to list Tizen packages: 'package-manager-cli show-pkgs --tree' "
+            f"exited with code {result.returncode}. Output: {details}"
         )
-    log_success("Installer checksum verification passed")
 
-
-def install_tizen_studio(
-    candidate: InstallerCandidate, installer_dir: Path, expected_sha256: str | None
-) -> Path:
-    installer_path = installer_dir / candidate.name
-    temp_path = installer_dir / f"{candidate.name}.tmp"
-
-    if temp_path.exists():
-        temp_path.unlink()
-
-    try:
-        log(f"Trying Tizen installer candidate: {candidate.url}")
-        download_file(candidate.url, temp_path)
-        verify_installer_checksum(temp_path, expected_sha256)
-
-        temp_path.replace(installer_path)
-        installer_path.chmod(installer_path.stat().st_mode | stat.S_IXUSR)
-        log(f"Running installer: {installer_path.name}")
-        run(
-            [
-                str(installer_path),
-                "--accept-license",
-                "Y",
-                "--no-java-check",
-                "/home/tizen/tizen-studio",
-            ]
+    packages = parse_show_packages(output)
+    if not packages:
+        details = format_output(output)
+        raise SystemExit(
+            f"Failed to parse 'package-manager-cli show-pkgs --tree' output. Output: {details}"
         )
-        log_success("Tizen Studio installation completed")
-        return Path("/home/tizen/tizen-studio/package-manager/package-manager-cli.bin")
-    except subprocess.CalledProcessError as exc:
-        raise InstallerCandidateError(
-            f"Installer process exited with code {exc.returncode}"
-        ) from exc
-    finally:
-        if temp_path.exists():
-            temp_path.unlink()
+    return packages
 
 
-def install_required_packages(package_manager: Path, packages: list[str]) -> None:
-    for package in packages:
-        log(f"Installing Tizen package: {package}")
-        try:
-            run([str(package_manager), "install", package])
-        except subprocess.CalledProcessError as exc:
-            raise SystemExit(
-                f"Failed to install Tizen package {package!r}: "
-                f"package manager exited with code {exc.returncode}"
-            ) from exc
-        log_success(f"Installed Tizen package: {package}")
+def validate_required_package_ids(packages: list[str]) -> None:
+    log("Validating required Tizen packages")
+    available_packages = show_packages()
+    missing_packages = [package for package in packages if package not in available_packages]
+    if missing_packages:
+        formatted_missing = ", ".join(sorted(missing_packages))
+        raise SystemExit(
+            f"Unknown Tizen package IDs: {formatted_missing}. "
+            "They were not found in 'package-manager-cli show-pkgs --tree' output. "
+            "Check the available packages with 'package-manager-cli show-pkgs --tree'."
+        )
+    log_success("Required Tizen packages are available")
 
 
-def main() -> int:
-    tizen_version = getenv_required("TIZEN_VERSION")
-    expected_sha256 = normalize_expected_sha256(getenv_optional("TIZEN_INSTALLER_SHA256"))
+def ensure_package_installed(package: str) -> None:
+    packages = show_packages()
+    status = packages.get(package)
+    if status not in INSTALLED_PACKAGE_STATUSES:
+        raise SystemExit(
+            f"Failed to install Tizen package {package!r}: 'package-manager-cli' did not mark it "
+            f"as installed (status: {status or 'missing'})."
+        )
+
+
+def validate_install_result(package: str, result: subprocess.CompletedProcess[str]) -> None:
+    output = normalize_output(result.stdout, result.stderr)
+
+    if result.returncode != 0:
+        details = format_output(output)
+        raise SystemExit(
+            f"Failed to install Tizen package {package!r}: 'package-manager-cli' exited with code "
+            f"{result.returncode}. Output: {details}"
+        )
+
+    ensure_package_installed(package)
+
+
+def load_required_packages() -> list[str]:
     raw_packages = getenv_required("REQUIRED_PACKAGES_JSON")
 
     try:
         packages = json.loads(raw_packages)
     except json.JSONDecodeError as exc:
         raise SystemExit(f"REQUIRED_PACKAGES_JSON must be valid JSON: {exc}") from exc
+
     if not isinstance(packages, list) or not all(
         isinstance(item, str) and item.strip() for item in packages
     ):
         raise SystemExit("REQUIRED_PACKAGES_JSON must be a JSON array of non-empty strings")
 
-    log(f"Preparing Tizen Studio installer for version {tizen_version}")
-    installer_dir = Path("/home/tizen/installer")
-    installer_dir.mkdir(parents=True, exist_ok=True)
-    candidate_errors: list[str] = []
-    package_manager: Path | None = None
+    return packages
 
-    for candidate in installer_candidates(tizen_version):
-        try:
-            package_manager = install_tizen_studio(candidate, installer_dir, expected_sha256)
-            break
-        except InstallerCandidateError as exc:
-            candidate_errors.append(f"{candidate.url}: {exc}")
-            log(f"Installer candidate failed: {exc}")
 
-    if package_manager is None:
-        joined_errors = "\n- ".join(candidate_errors)
+def verify_bundled_installer(expected_sha256: str) -> None:
+    if not INSTALLER_PATH.is_file():
+        raise SystemExit(f"Bundled installer is missing: {INSTALLER_PATH}")
+
+    actual_sha256 = sha256_file(INSTALLER_PATH)
+    if actual_sha256 != expected_sha256:
         raise SystemExit(
-            f"Failed to install Tizen Studio with all known installer variants:\n- {joined_errors}"
+            f"Bundled installer checksum mismatch: expected {expected_sha256}, got {actual_sha256}"
         )
 
-    install_required_packages(package_manager, packages)
+    log_success("Bundled installer checksum verification passed")
+
+
+def install_tizen_studio() -> None:
+    INSTALLER_PATH.chmod(INSTALLER_PATH.stat().st_mode | stat.S_IXUSR)
+    log(f"Running bundled Tizen Studio installer: {INSTALLER_PATH.name}")
+    run([str(INSTALLER_PATH), "--accept-license", "Y", "/home/tizen/tizen-studio"])
+    log_success("Tizen Studio installation completed")
+
+
+def install_required_packages(packages: list[str]) -> None:
+    validate_required_package_ids(packages)
+
+    for package in packages:
+        log(f"Installing Tizen package: {package}")
+        result = run(
+            [str(PACKAGE_MANAGER_PATH), "install", package, "--accept-license"],
+            check=False,
+            capture_output=True,
+        )
+        validate_install_result(package, result)
+        log_success(f"Installed Tizen package: {package}")
+
+
+def main() -> int:
+    expected_sha256 = normalize_sha256(getenv_required("TIZEN_INSTALLER_SHA256"))
+    packages = load_required_packages()
+
+    verify_bundled_installer(expected_sha256)
+    install_tizen_studio()
+    install_required_packages(packages)
     return 0
 
 

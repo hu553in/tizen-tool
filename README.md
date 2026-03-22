@@ -15,7 +15,7 @@ It provides:
 - a reproducible Tizen Studio setup inside Docker
 - `build`, `resign`, and `install` commands
 - strict configuration loading from CLI arguments, environment variables, and `.env`
-- optional installer checksum verification
+- local caching of the Tizen Studio installer by version
 - Docker image reuse keyed by the Tizen Studio version, required packages, and bundled Docker resources
 
 The project is intentionally small. It is designed to remain predictable, easy to audit,
@@ -94,9 +94,9 @@ The tool reads `.env` from the current working directory. The effective preceden
 
 | Name                                                               | Required         | Description                                                                                          |
 | ------------------------------------------------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------- |
-| `TIZEN_VERSION`                                                    | Yes              | Tizen Studio version used to resolve the installer URL.                                              |
+| `TIZEN_VERSION`                                                    | Yes              | Tizen Studio version (`3.7` or newer), used to resolve the installer URL.                            |
 | `REQUIRED_PACKAGES`                                                | Yes              | JSON array of Tizen package IDs installed into the Docker image.                                     |
-| `TIZEN_INSTALLER_SHA256`                                           | No               | Optional SHA-256 checksum used to verify the installer binary before execution.                      |
+| `CACHE_DIR`                                                        | No               | Directory used for application cache files. Defaults to `~/.tizen-tool`.                             |
 | `PROFILES_DIR`                                                     | Build / resign   | Directory containing `profiles.xml`. Relative paths are resolved from the current working directory. |
 | `PROFILE`                                                          | Build / resign   | Signing profile name from `profiles.xml`.                                                            |
 | `TV_IP`                                                            | Install          | TV address or serial. Accepted forms: `host`, `host:port`, `IPv4`, or `[IPv6]:port`.                 |
@@ -106,11 +106,11 @@ The tool reads `.env` from the current working directory. The effective preceden
 | `INSTALL_PACKAGE_FILE` or `PACKAGE_FILE`                           | Install fallback | `.wgt` package path used when not passed on the CLI.                                                 |
 | `RESIGN_PACKAGE_FILE` or `PACKAGE_FILE`                            | Resign fallback  | `.wgt` package path used when not passed on the CLI.                                                 |
 
-See [`.env.example`](./.env.example) for a complete example.
+See [`.env.example`](./.env.example) for an example configuration.
 
 ---
 
-## Commands
+## Examples
 
 Build a package:
 
@@ -156,7 +156,7 @@ Force rebuilding the Docker image:
 tizen-tool build /path/to/app --rebuild
 ```
 
-You can also run the package directly from a checkout:
+Run the package directly from a checkout:
 
 ```bash
 uv run tizen-tool --help
@@ -170,11 +170,16 @@ uv run tizen-tool --help
   and writes the final `.wgt` to `dist/` inside the source directory
 - `resign` writes the new package to `resigned/` next to the source package
 - `install` mounts the package directory read-only and installs by package name over `sdb`
-- temporary files are stored under `.tizen-tool/tmp/` in the current working directory
+- installer binaries are cached under `<CACHE_DIR>/installers/` by `TIZEN_VERSION`
+- temporary files are stored under `<CACHE_DIR>/tmp/`
 - the Docker image is reused unless its identifying labels no longer match the requested configuration
 
-During image build, the installer helper tries both known Tizen installer URL patterns
-and stops at the first successful match.
+When an installer is not already cached for the requested `TIZEN_VERSION`, the tool tries both
+known Tizen installer URL patterns, stores the first successful match in the local cache, and
+reuses it for subsequent image rebuilds of the same version.
+
+The project supports Tizen Studio 3.7 or newer. Older CLI installers require a preinstalled
+Java runtime and are intentionally rejected during configuration validation.
 
 ---
 

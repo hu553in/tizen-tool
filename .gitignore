@@ -1,5 +1,3 @@
-.tmp/
-.tizen-tool/
 .venv/
 .pytest_cache/
 .mypy_cache/
