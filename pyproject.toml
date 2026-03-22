@@ -1,6 +1,6 @@
 [project]
 name = "tizen-tool"
-version = "0.1.0"
+version = "0.2.0"
 description = "Small CLI for building, re-signing, and installing Tizen web packages through a Dockerized Tizen Studio environment"
 readme = "README.md"
 requires-python = ">=3.10"
