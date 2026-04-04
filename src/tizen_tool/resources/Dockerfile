@@ -17,12 +17,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 ENV PATH="$PATH:/home/tizen/tizen-studio/tools:/home/tizen/tizen-studio/tools/ide/bin"
 
-RUN apt-get update && \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt/lists \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
     python3 \
-    unzip && \
-    rm -rf /var/lib/apt/lists/*
+    unzip
 
 RUN useradd -m -s /bin/bash tizen
 USER tizen

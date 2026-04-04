@@ -8,6 +8,10 @@ MAIN_BRANCH ?= main
 install_deps:
 	uv sync --all-groups --frozen
 
+.PHONY: sync_deps
+sync_deps:
+	uv sync --all-groups
+
 .PHONY: check_deps_updates
 check_deps_updates:
 	uv tree --outdated --depth=1 | grep latest
@@ -28,6 +32,8 @@ check_types:
 .PHONY: check
 check:
 	uv run prek --all-files --hook-stage pre-commit
+
+# Project-specific
 
 .PHONY: build
 build:
