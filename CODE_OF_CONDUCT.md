@@ -1,4 +1,4 @@
-# Code of Conduct - Tizen tool
+# Code of Conduct — Tizen tool
 
 ## Our Pledge
 

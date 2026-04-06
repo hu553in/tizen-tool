@@ -21,8 +21,6 @@ It provides:
 The project is intentionally small. It is designed to remain predictable, easy to audit,
 and simple to run from a single working directory.
 
----
-
 ## What it does
 
 - Builds a `.wgt` package from a Tizen web app directory
@@ -36,8 +34,6 @@ Typical workflow:
 2. Build or re-sign a package
 3. Install it on a TV
 
----
-
 ## Requirements
 
 - Python 3.10 or newer
@@ -47,8 +43,6 @@ Typical workflow:
 
 The default local development version is Python 3.14, as defined in
 [`.python-version`](./.python-version). CI also runs on Python 3.14.
-
----
 
 ## Installation
 
@@ -82,8 +76,6 @@ Run the tool from a repository checkout with:
 uv run tizen-tool --help
 ```
 
----
-
 ## Configuration
 
 The tool reads `.env` from the current working directory. The effective precedence is:
@@ -107,8 +99,6 @@ The tool reads `.env` from the current working directory. The effective preceden
 | `RESIGN_PACKAGE_FILE` or `PACKAGE_FILE`                            | Resign fallback  | `.wgt` package path used when not passed on the CLI.                                                 |
 
 See [`.env.example`](./.env.example) for an example configuration.
-
----
 
 ## Examples
 
@@ -162,8 +152,6 @@ Run the package directly from a checkout:
 uv run tizen-tool --help
 ```
 
----
-
 ## Outputs and runtime behavior
 
 - `build` copies the app into a temporary directory, runs `tizen build-web`,
@@ -180,8 +168,6 @@ reuses it for subsequent image rebuilds of the same version.
 
 The project supports Tizen Studio 3.7 or newer. Older CLI installers require a preinstalled
 Java runtime and are intentionally rejected during configuration validation.
-
----
 
 ## Development
 
@@ -210,8 +196,6 @@ Run the full local check suite:
 ```bash
 make check
 ```
-
----
 
 ## Release
 

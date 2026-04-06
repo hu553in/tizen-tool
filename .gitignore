@@ -1,9 +1,11 @@
+.DS_Store
+Thumbs.db
+.env
 .venv/
 .pytest_cache/
+.ruff_cache/
+__pycache__/
 build/
 dist/
 *.egg-info/
-.env
-__pycache__/
 *.py[cod]
-.DS_Store
