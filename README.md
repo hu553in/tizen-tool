@@ -4,7 +4,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/tizen-tool)](https://pypi.org/project/tizen-tool/)
 
 - [License](./LICENSE)
-- [How to contribute](./CONTRIBUTING.md)
+- [Contributing](./CONTRIBUTING.md)
 - [Code of conduct](./CODE_OF_CONDUCT.md)
 
 `tizen-tool` is a small CLI for building, re-signing, and installing Tizen web packages
