@@ -30,7 +30,7 @@ jobs:
         with:
           extra_args: --all-files --hook-stage pre-commit
 
-  publish:
+  release:
     needs: check
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
@@ -46,3 +46,10 @@ jobs:
       - run: make install_deps
       - run: make build
       - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: loopwerk/tag-changelog@v1
+        id: changelog
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.changelog.outputs.changes }}
