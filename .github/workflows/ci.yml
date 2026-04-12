@@ -3,12 +3,12 @@ name: CI
 on:
   push:
     branches:
-      - "**"
+      - '**'
     tags:
-      - "v*"
+      - 'v*'
   pull_request:
     branches:
-      - "**"
+      - '**'
   workflow_dispatch:
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
-      - run: make install_deps
+      - run: make install-deps
       - uses: actions/cache@v5
         with:
           path: ~/.cache/prek
@@ -44,13 +44,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
-      - run: make install_deps
+      - run: make install-deps
       - run: make build
       - uses: pypa/gh-action-pypi-publish@release/v1
-      - uses: loopwerk/tag-changelog@v1
-        id: changelog
+      - uses: softprops/action-gh-release@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: softprops/action-gh-release@v2
-        with:
-          body: ${{ steps.changelog.outputs.changes }}
+          generate_release_notes: true

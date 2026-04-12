@@ -1,7 +1,7 @@
 [project]
 name = "tizen-tool"
 version = "0.2.2"
-description = "Small CLI for building, re-signing, and installing Tizen web packages through a Dockerized Tizen Studio environment"
+description = "tizen-tool is a small CLI for building, re-signing, and installing Tizen web packages through a Dockerized Tizen Studio environment."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -73,10 +73,35 @@ include = ["/src/tizen_tool", "/README.md", "/LICENSE", "/pyproject.toml"]
 dev = [
   "bandit>=1.9.4",
   "prek>=0.3.8",
+  "python-semantic-release>=10.4.1",
   "pysentry-rs>=0.4.3",
   "ruff>=0.15.9",
   "ty>=0.0.28",
 ]
+
+[tool.semantic_release]
+allow_zero_version = true
+build_command = "uv build"
+commit_message = "chore(release): v{version}"
+commit_parser = "conventional"
+logging_use_named_masks = true
+major_on_zero = false
+tag_format = "v{version}"
+upload_to_vcs_release = false
+version_toml = ["pyproject.toml:project.version"]
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[tool.semantic_release.changelog]
+exclude_commit_patterns = [
+  "^chore\\(release\\): v\\d+\\.\\d+\\.\\d+$",
+  "^Merge ",
+]
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
 
 [tool.ruff]
 target-version = "py310"

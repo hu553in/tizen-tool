@@ -67,7 +67,7 @@ pipx install tizen-tool
 ### Local development
 
 ```bash
-make install_deps
+make install-deps
 ```
 
 Run the tool from a repository checkout with:
@@ -174,12 +174,12 @@ Java runtime and are intentionally rejected during configuration validation.
 Useful commands:
 
 ```bash
-make install_deps
+make install-deps
 make lint
-make check_types
+make check-types
 make check
-make check_deps_updates
-make check_deps_vuln
+make check-deps-updates
+make check-deps-vuln
 make build
 ```
 
@@ -199,21 +199,23 @@ make check
 
 ## Release
 
-Create a release from the `main` branch with no tracked changes in the working tree:
+Create a patch, minor, or major release from the `main` branch:
 
 ```bash
-make release V=0.1.0
+make release-patch
+make release-minor
+make release-major
 ```
 
-The `release` target:
+These targets:
 
-- installs dependencies
-- runs the local checks
-- builds distributions
-- updates the version if `V` differs from the current project version
-- commits and pushes the version bump when needed
-- creates and pushes the annotated tag `v<V>`
-- can publish an existing version by pushing only the tag when `V` already matches the current version
+- install dependencies
+- run the local checks
+- run `python-semantic-release`
+- infer the next version from conventional commits
+- update [`pyproject.toml`](./pyproject.toml) and [`CHANGELOG.md`](./CHANGELOG.md)
+- build distributions with `uv build`
+- create and push the release commit and annotated tag
 
 GitHub Actions publishes tagged releases to PyPI from
 [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
