@@ -39,12 +39,12 @@ build:
 
 .PHONY: release-patch
 release-patch: install-deps check
-	uv run semantic-release version --strict --no-vcs-release --patch
+	uv run semantic-release --strict version --no-vcs-release --patch
 
 .PHONY: release-minor
 release-minor: install-deps check
-	uv run semantic-release version --strict --no-vcs-release --minor
+	uv run semantic-release --strict version --no-vcs-release --minor
 
 .PHONY: release-major
 release-major: install-deps check
-	uv run semantic-release version --strict --no-vcs-release --major
+	uv run semantic-release --strict version --no-vcs-release --major
