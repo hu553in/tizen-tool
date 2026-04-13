@@ -80,12 +80,12 @@ dev = [
 ]
 
 [tool.semantic_release]
-allow_zero_version = true
-build_command = "uv build"
+build_command = """
+    uv lock --upgrade-package "$PACKAGE_NAME"
+    git add uv.lock
+    uv build
+"""
 commit_message = "chore(release): v{version}"
-commit_parser = "conventional"
-logging_use_named_masks = true
-major_on_zero = false
 tag_format = "v{version}"
 upload_to_vcs_release = false
 version_toml = ["pyproject.toml:project.version"]
@@ -93,15 +93,6 @@ version_toml = ["pyproject.toml:project.version"]
 [tool.semantic_release.branches.main]
 match = "main"
 prerelease = false
-
-[tool.semantic_release.changelog]
-exclude_commit_patterns = [
-  "^chore\\(release\\): v\\d+\\.\\d+\\.\\d+$",
-  "^Merge ",
-]
-
-[tool.semantic_release.changelog.default_templates]
-changelog_file = "CHANGELOG.md"
 
 [tool.ruff]
 target-version = "py310"
