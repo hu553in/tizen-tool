@@ -213,9 +213,9 @@ These targets:
 - run the local checks
 - run `python-semantic-release`
 - infer the next version from conventional commits
-- update [`pyproject.toml`](./pyproject.toml) and [`CHANGELOG.md`](./CHANGELOG.md)
+- update [`pyproject.toml`](./pyproject.toml)
 - build distributions with `uv build`
 - create and push the release commit and annotated tag
 
-GitHub Actions publishes tagged releases to PyPI from
-[`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
+After pushing the release commit and tag, GitHub Actions publishes the tagged release to PyPI
+and creates the GitHub release from [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
