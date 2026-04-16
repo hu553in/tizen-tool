@@ -178,8 +178,6 @@ make install-deps
 make lint
 make check-types
 make check
-make check-deps-updates
-make check-deps-vuln
 make build
 ```
 
