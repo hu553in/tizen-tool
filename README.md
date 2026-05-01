@@ -7,19 +7,8 @@
 - [Contributing](./CONTRIBUTING.md)
 - [Code of conduct](./CODE_OF_CONDUCT.md)
 
-`tizen-tool` is a small CLI for building, re-signing, and installing Tizen web packages
+`tizen-tool` is a CLI for building, re-signing, and installing Tizen web packages
 through a Dockerized Tizen Studio environment.
-
-It provides:
-
-- a reproducible Tizen Studio setup inside Docker
-- `build`, `resign`, and `install` commands
-- strict configuration loading from CLI arguments, environment variables, and `.env`
-- local caching of the Tizen Studio installer by version
-- Docker image reuse keyed by the Tizen Studio version, required packages, and bundled Docker resources
-
-The project is intentionally small. It is designed to remain predictable, easy to audit,
-and simple to run from a single working directory.
 
 ## What it does
 
@@ -27,6 +16,8 @@ and simple to run from a single working directory.
 - Re-signs an existing `.wgt` package with a configured profile
 - Installs a `.wgt` package on a TV over `sdb`
 - Builds and reuses a local Docker image with Tizen Studio and the required Tizen packages
+- Loads configuration from CLI arguments, environment variables, and `.env`
+- Caches the Tizen Studio installer by version
 
 Typical workflow:
 
@@ -58,7 +49,7 @@ Run without installing:
 uvx tizen-tool --help
 ```
 
-You can also use `pipx`:
+Alternative installation with `pipx`:
 
 ```bash
 pipx install tizen-tool
@@ -89,8 +80,8 @@ The tool reads `.env` from the current working directory. The effective preceden
 | `TIZEN_VERSION`                                                    | Yes              | Tizen Studio version (`3.7` or newer), used to resolve the installer URL.                            |
 | `REQUIRED_PACKAGES`                                                | Yes              | JSON array of Tizen package IDs installed into the Docker image.                                     |
 | `CACHE_DIR`                                                        | No               | Directory used for application cache files. Defaults to `~/.tizen-tool`.                             |
-| `PROFILES_DIR`                                                     | Build / resign   | Directory containing `profiles.xml`. Relative paths are resolved from the current working directory. |
-| `PROFILE`                                                          | Build / resign   | Signing profile name from `profiles.xml`.                                                            |
+| `PROFILES_DIR`                                                     | Build or resign  | Directory containing `profiles.xml`. Relative paths are resolved from the current working directory. |
+| `PROFILE`                                                          | Build or resign  | Signing profile name from `profiles.xml`.                                                            |
 | `TV_IP`                                                            | Install          | TV address or serial. Accepted forms: `host`, `host:port`, `IPv4`, or `[IPv6]:port`.                 |
 | `BUILD_SRC_DIR` or `SRC_DIR`                                       | Build fallback   | Source directory for the app when not passed on the CLI.                                             |
 | `BUILDIGNORE_FILE` or `BUILD_IGNORE_FILE`                          | Build fallback   | Optional gitignore-style exclude file for the build copy step.                                       |
@@ -146,7 +137,7 @@ Force rebuilding the Docker image:
 tizen-tool build /path/to/app --rebuild
 ```
 
-Run the package directly from a checkout:
+Run the CLI directly from a checkout:
 
 ```bash
 uv run tizen-tool --help
@@ -158,16 +149,16 @@ uv run tizen-tool --help
   and writes the final `.wgt` to `dist/` inside the source directory
 - `resign` writes the new package to `resigned/` next to the source package
 - `install` mounts the package directory read-only and installs by package name over `sdb`
-- installer binaries are cached under `<CACHE_DIR>/installers/` by `TIZEN_VERSION`
-- temporary files are stored under `<CACHE_DIR>/tmp/`
-- the Docker image is reused unless its identifying labels no longer match the requested configuration
+- Installer binaries are cached under `<CACHE_DIR>/installers/` by `TIZEN_VERSION`
+- Temporary files are stored under `<CACHE_DIR>/tmp/`
+- The Docker image is reused unless its identifying labels no longer match the requested configuration
 
 When an installer is not already cached for the requested `TIZEN_VERSION`, the tool tries both
 known Tizen installer URL patterns, stores the first successful match in the local cache, and
 reuses it for subsequent image rebuilds of the same version.
 
 The project supports Tizen Studio 3.7 or newer. Older CLI installers require a preinstalled
-Java runtime and are intentionally rejected during configuration validation.
+Java runtime and are rejected during configuration validation.
 
 ## Development
 
@@ -188,12 +179,6 @@ The development toolchain uses:
 - `prek`
 - `pysentry-rs`
 - `bandit`
-
-Run the full local check suite:
-
-```bash
-make check
-```
 
 ## Release
 
