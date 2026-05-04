@@ -76,7 +76,7 @@ dev = [
   "python-semantic-release>=10.4.1",
   "pysentry-rs>=0.4.3",
   "ruff>=0.15.9",
-  "ty>=0.0.28",
+  "ty>=0.0.34",
 ]
 
 [tool.semantic_release]
