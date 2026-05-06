@@ -72,7 +72,7 @@ include = ["/src/tizen_tool", "/README.md", "/LICENSE", "/pyproject.toml"]
 [dependency-groups]
 dev = [
   "bandit>=1.9.4",
-  "prek>=0.3.12",
+  "prek>=0.3.13",
   "python-semantic-release>=10.4.1",
   "pysentry-rs>=0.4.3",
   "ruff>=0.15.9",
