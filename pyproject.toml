@@ -46,7 +46,7 @@ dependencies = [
   "defusedxml>=0.7.1",
   "ifaddr>=0.2.0",
   "pathspec>=1.0.4",
-  "pydantic-settings>=2.13.1",
+  "pydantic-settings>=2.14.1",
   "typer>=0.23.0,<0.24.0",
 ]
 
