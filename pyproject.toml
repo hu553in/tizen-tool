@@ -43,9 +43,11 @@ classifiers = [
 ]
 
 dependencies = [
+  "click>=8.1.8",
   "defusedxml>=0.7.1",
   "ifaddr>=0.2.0",
   "pathspec>=1.0.4",
+  "pydantic>=2.12.5",
   "pydantic-settings>=2.14.1",
   "typer>=0.23.0,<0.24.0",
 ]
@@ -72,6 +74,7 @@ include = ["/src/tizen_tool", "/README.md", "/LICENSE", "/pyproject.toml"]
 [dependency-groups]
 dev = [
   "bandit>=1.9.4",
+  "deptry>=0.25.1",
   "prek>=0.3.13",
   "python-semantic-release>=10.4.1",
   "pysentry-rs>=0.4.3",
@@ -114,6 +117,14 @@ fail_on = "low"
 
 [tool.pysentry.sources]
 enabled = ["pypa", "pypi", "osv"]
+
+[tool.deptry]
+known_first_party = ["tizen_tool"]
+
+[tool.vulture]
+paths = ["src"]
+min_confidence = 100
+sort_by_size = true
 
 [tool.bandit.assert_used]
 skips = ["*_test.py", "*test_*.py"]

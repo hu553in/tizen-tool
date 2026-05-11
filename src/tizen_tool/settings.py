@@ -121,7 +121,7 @@ class CommonSettings(BaseSettings):
 
     @field_validator("tizen_version")
     @classmethod
-    def validate_tizen_version(cls, value: str) -> str:
+    def validate_tizen_version(_cls, value: str) -> str:
         version = value.strip()
         if parse_tizen_version(version) < MIN_SUPPORTED_TIZEN_VERSION:
             min_version = ".".join(str(part) for part in MIN_SUPPORTED_TIZEN_VERSION)
@@ -134,7 +134,7 @@ class CommonSettings(BaseSettings):
 
     @field_validator("required_packages")
     @classmethod
-    def validate_required_packages(cls, value: list[str]) -> list[str]:
+    def validate_required_packages(_cls, value: list[str]) -> list[str]:
         packages: list[str] = []
         seen: set[str] = set()
         for package in value:
@@ -149,14 +149,14 @@ class CommonSettings(BaseSettings):
 
     @field_validator("cache_dir", mode="before")
     @classmethod
-    def normalize_cache_dir(cls, value: Any) -> Path:
+    def normalize_cache_dir(_cls, value: Any) -> Path:
         if value in (None, ""):
             return cache_root()
         return resolve_working_path(value)
 
     @field_validator("profiles_dir", mode="before")
     @classmethod
-    def normalize_profiles_dir(cls, value: Any) -> Path | None:
+    def normalize_profiles_dir(_cls, value: Any) -> Path | None:
         if value in (None, ""):
             return None
         return resolve_working_path(value)
@@ -173,12 +173,12 @@ class BuildSettings(CommonSettings):
 
     @field_validator("src_dir", mode="before")
     @classmethod
-    def normalize_src_dir(cls, value: Any) -> Path:
+    def normalize_src_dir(_cls, value: Any) -> Path:
         return resolve_working_path(value)
 
     @field_validator("buildignore_file", mode="before")
     @classmethod
-    def normalize_buildignore_file(cls, value: Any) -> Path | None:
+    def normalize_buildignore_file(_cls, value: Any) -> Path | None:
         if value in (None, ""):
             return None
         return resolve_working_path(value)
@@ -195,17 +195,17 @@ class InstallSettings(CommonSettings):
 
     @field_validator("package_file", mode="before")
     @classmethod
-    def normalize_package_file(cls, value: Any) -> Path:
+    def normalize_package_file(_cls, value: Any) -> Path:
         return normalize_package_file_path(value)
 
     @field_validator("package_file")
     @classmethod
-    def validate_package_file(cls, value: Path) -> Path:
+    def validate_package_file(_cls, value: Path) -> Path:
         return validate_wgt_path(value)
 
     @field_validator("tv_ip")
     @classmethod
-    def normalize_tv_ip(cls, value: str) -> str:
+    def normalize_tv_ip(_cls, value: str) -> str:
         return normalize_tv_serial(value)
 
 
@@ -219,12 +219,12 @@ class ResignSettings(CommonSettings):
 
     @field_validator("package_file", mode="before")
     @classmethod
-    def normalize_package_file(cls, value: Any) -> Path:
+    def normalize_package_file(_cls, value: Any) -> Path:
         return normalize_package_file_path(value)
 
     @field_validator("package_file")
     @classmethod
-    def validate_package_file(cls, value: Path) -> Path:
+    def validate_package_file(_cls, value: Path) -> Path:
         return validate_wgt_path(value)
 
 
