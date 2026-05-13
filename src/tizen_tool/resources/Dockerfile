@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM ubuntu:26.04
 
 ARG TIZEN_VERSION
@@ -23,8 +25,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
   apt-get install -y --no-install-recommends \
   ca-certificates \
   python3 \
-  unzip && \
-  rm -rf /var/lib/apt/lists/*
+  unzip
 
 RUN useradd -m -s /bin/bash tizen
 USER tizen
