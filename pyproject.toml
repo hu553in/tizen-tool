@@ -1,0 +1,130 @@
+[project]
+name = "tizen-tool"
+version = "0.2.6"
+description = "CLI for building, re-signing, and installing Tizen web packages through Dockerized Tizen Studio."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Ruslan Khasanshin" }]
+maintainers = [{ name = "Ruslan Khasanshin" }]
+
+keywords = [
+  "tizen",
+  "tizen-studio",
+  "tizen-tv",
+  "samsung-tv",
+  "cli",
+  "docker",
+  "wgt",
+  "web-app",
+  "packaging",
+  "signing",
+  "deployment",
+  "developer-tools",
+  "automation",
+]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Software Development",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Utilities",
+]
+
+dependencies = [
+  "click>=8.1.8",
+  "defusedxml>=0.7.1",
+  "ifaddr>=0.2.0",
+  "pathspec>=1.0.4",
+  "pydantic>=2.13.4",
+  "pydantic-settings>=2.14.1",
+  "typer>=0.26.7,<0.27.0",
+]
+
+[project.scripts]
+tizen-tool = "tizen_tool.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/hu553in/tizen-tool"
+Repository = "https://github.com/hu553in/tizen-tool"
+Issues = "https://github.com/hu553in/tizen-tool/issues"
+Changelog = "https://github.com/hu553in/tizen-tool/releases"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tizen_tool"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src/tizen_tool", "/README.md", "/LICENSE", "/pyproject.toml"]
+
+[dependency-groups]
+dev = [
+  "bandit>=1.9.4",
+  "deptry>=0.25.1",
+  "prek>=0.4.5",
+  "python-semantic-release>=10.4.1",
+  "pysentry-rs>=0.4.6",
+  "ruff>=0.15.17",
+  "ty>=0.0.49",
+]
+
+[tool.semantic_release]
+build_command = """
+    uv lock --upgrade-package "$PACKAGE_NAME"
+    git add uv.lock
+    uv build
+"""
+commit_message = "chore(release): v{version}"
+tag_format = "v{version}"
+version_toml = ["pyproject.toml:project.version"]
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ARG", "PL", "RUF"]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = true
+
+[tool.pysentry.defaults]
+fail_on = "low"
+
+[tool.pysentry.sources]
+enabled = ["pypa", "pypi", "osv"]
+
+[tool.deptry]
+known_first_party = ["tizen_tool"]
+
+[tool.vulture]
+paths = ["src"]
+min_confidence = 100
+sort_by_size = true
+
+[tool.bandit.assert_used]
+skips = ["*_test.py", "*test_*.py"]

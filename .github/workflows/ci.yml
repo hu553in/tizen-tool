@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - run: make install-deps
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/prek
+          key: prek|${{ runner.os }}|${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            prek|${{ runner.os }}|
+      - uses: j178/prek-action@v2
+        with:
+          extra-args: --all-files --hook-stage pre-commit
+
+  release:
+    needs: check
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/tizen-tool
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - run: make install-deps
+      - run: make build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true

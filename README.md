@@ -1,0 +1,205 @@
+# Tizen tool
+
+[![CI](https://github.com/hu553in/tizen-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/hu553in/tizen-tool/actions/workflows/ci.yml)
+[![PyPI - Version](https://img.shields.io/pypi/v/tizen-tool)](https://pypi.org/project/tizen-tool/)
+
+- [License](./LICENSE)
+- [Contributing](./CONTRIBUTING.md)
+- [Code of conduct](./CODE_OF_CONDUCT.md)
+
+`tizen-tool` is a CLI for building, re-signing, and installing Tizen web packages through a
+Dockerized Tizen Studio environment.
+
+## What it does
+
+- Builds a `.wgt` package from a Tizen web app directory
+- Re-signs an existing `.wgt` package with a configured profile
+- Installs a `.wgt` package on a TV over `sdb`
+- Builds and reuses a local Docker image with Tizen Studio and the required Tizen packages
+- Loads configuration from CLI arguments, environment variables, and `.env`
+- Caches the Tizen Studio installer by version
+
+Typical workflow:
+
+1. Configure `.env`
+2. Build or re-sign a package
+3. Install it on a TV
+
+## Requirements
+
+- Python 3.10 or newer
+- Docker with Linux image support
+- [uv](https://docs.astral.sh/uv/)
+- a valid Tizen signing profile directory containing `profiles.xml`
+
+The default local development version is Python 3.14, as defined in
+[`.python-version`](./.python-version). CI also runs on Python 3.14.
+
+## Installation
+
+### Install as a tool
+
+```bash
+uv tool install tizen-tool
+```
+
+Run without installing:
+
+```bash
+uvx tizen-tool --help
+```
+
+Alternative installation with `pipx`:
+
+```bash
+pipx install tizen-tool
+```
+
+### Local development
+
+```bash
+make install-deps
+```
+
+Run the tool from a repository checkout with:
+
+```bash
+uv run tizen-tool --help
+```
+
+## Configuration
+
+The tool reads `.env` from the current working directory. The effective precedence is:
+
+1. CLI arguments
+2. Environment variables
+3. `.env`
+
+| Name                                                               | Required         | Description                                                                                          |
+| ------------------------------------------------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------- |
+| `TIZEN_VERSION`                                                    | Yes              | Tizen Studio version (`3.7` or newer), used to resolve the installer URL.                            |
+| `REQUIRED_PACKAGES`                                                | Yes              | JSON array of Tizen package IDs installed into the Docker image.                                     |
+| `CACHE_DIR`                                                        | No               | Directory used for application cache files. Defaults to `~/.tizen-tool`.                             |
+| `PROFILES_DIR`                                                     | Build or resign  | Directory containing `profiles.xml`. Relative paths are resolved from the current working directory. |
+| `PROFILE`                                                          | Build or resign  | Signing profile name from `profiles.xml`.                                                            |
+| `TV_IP`                                                            | Install          | TV address or serial. Accepted forms: `host`, `host:port`, `IPv4`, or `[IPv6]:port`.                 |
+| `BUILD_SRC_DIR` or `SRC_DIR`                                       | Build fallback   | Source directory for the app when not passed on the CLI.                                             |
+| `BUILDIGNORE_FILE` or `BUILD_IGNORE_FILE`                          | Build fallback   | Optional gitignore-style exclude file for the build copy step.                                       |
+| `BUILD_REBUILD`, `INSTALL_REBUILD`, `RESIGN_REBUILD`, or `REBUILD` | No               | Forces Docker image rebuilding for the corresponding command.                                        |
+| `INSTALL_PACKAGE_FILE` or `PACKAGE_FILE`                           | Install fallback | `.wgt` package path used when not passed on the CLI.                                                 |
+| `RESIGN_PACKAGE_FILE` or `PACKAGE_FILE`                            | Resign fallback  | `.wgt` package path used when not passed on the CLI.                                                 |
+
+See [`.env.example`](./.env.example) for an example configuration.
+
+## Examples
+
+Build a package:
+
+```bash
+tizen-tool build /path/to/app
+```
+
+Build with explicit package overrides:
+
+```bash
+tizen-tool build /path/to/app \
+  --required-package TV-Samsung_Public_6.0 \
+  --required-package TV-Samsung_Wearable_6.0
+```
+
+Re-sign a package:
+
+```bash
+tizen-tool resign /path/to/app.wgt
+```
+
+Install a package on the configured TV:
+
+```bash
+tizen-tool install /path/to/app.wgt
+```
+
+Print LAN IPv4 addresses by interface for TV Developer Mode:
+
+```bash
+tizen-tool get-lan-ips
+```
+
+Override the TV target from the CLI:
+
+```bash
+tizen-tool install /path/to/app.wgt --tv-ip 192.168.1.100
+```
+
+Force rebuilding the Docker image:
+
+```bash
+tizen-tool build /path/to/app --rebuild
+```
+
+Run the CLI directly from a checkout:
+
+```bash
+uv run tizen-tool --help
+```
+
+## Outputs and runtime behavior
+
+- `build` copies the app into a temporary directory, runs `tizen build-web`, and writes the final
+  `.wgt` to `dist/` inside the source directory
+- `resign` writes the new package to `resigned/` next to the source package
+- `install` mounts the package directory read-only and installs by package name over `sdb`
+- Installer binaries are cached under `<CACHE_DIR>/installers/` by `TIZEN_VERSION`
+- Temporary files are stored under `<CACHE_DIR>/tmp/`
+- The Docker image is reused unless its identifying labels no longer match the requested
+  configuration
+
+When an installer is not already cached for the requested `TIZEN_VERSION`, the tool tries both known
+Tizen installer URL patterns, stores the first successful match in the local cache, and reuses it
+for subsequent image rebuilds of the same version.
+
+The project supports Tizen Studio 3.7 or newer. Older CLI installers require a preinstalled Java
+runtime and are rejected during configuration validation.
+
+## Development
+
+Useful commands:
+
+```bash
+make install-deps
+make lint
+make check-types
+make check
+make build
+```
+
+The development toolchain uses:
+
+- `ruff`
+- `ty`
+- `prek`
+- `pysentry-rs`
+- `bandit`
+
+## Release
+
+Create a patch, minor, or major release from the `main` branch:
+
+```bash
+make release-patch
+make release-minor
+make release-major
+```
+
+These targets:
+
+- install dependencies
+- run the local checks
+- run `python-semantic-release`
+- infer the next version from conventional commits
+- update [`pyproject.toml`](./pyproject.toml)
+- build distributions with `uv build`
+- create and push the release commit and annotated tag
+
+After pushing the release commit and tag, GitHub Actions publishes the tagged release to PyPI and
+creates the GitHub release from [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
