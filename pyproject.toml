@@ -59,7 +59,6 @@ tizen-tool = "tizen_tool.cli:main"
 Homepage = "https://github.com/hu553in/tizen-tool"
 Repository = "https://github.com/hu553in/tizen-tool"
 Issues = "https://github.com/hu553in/tizen-tool/issues"
-Changelog = "https://github.com/hu553in/tizen-tool/releases"
 
 [build-system]
 requires = ["hatchling"]
@@ -76,25 +75,15 @@ dev = [
   "bandit>=1.9.4",
   "deptry>=0.25.1",
   "prek>=0.4.5",
-  "python-semantic-release>=10.4.1",
   "pysentry-rs>=0.4.7",
   "ruff>=0.15.18",
   "ty>=0.0.51",
 ]
 
-[tool.semantic_release]
-build_command = """
-    uv lock --upgrade-package "$PACKAGE_NAME"
-    git add uv.lock
-    uv build
-"""
-commit_message = "chore(release): v{version}"
-tag_format = "v{version}"
-version_toml = ["pyproject.toml:project.version"]
-
-[tool.semantic_release.branches.main]
-match = "main"
-prerelease = false
+[tool.uv]
+default-groups = ["dev"]
+link-mode = "copy"
+package = true
 
 [tool.ruff]
 target-version = "py310"
