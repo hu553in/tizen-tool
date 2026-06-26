@@ -59,7 +59,7 @@ The tool reads `.env` from the current working directory. Precedence:
 | `RESIGN_PACKAGE_FILE` or `PACKAGE_FILE`                            | Resign fallback  | `.wgt` package path when not passed on the CLI     |
 | `BUILD_REBUILD`, `INSTALL_REBUILD`, `RESIGN_REBUILD`, or `REBUILD` | No               | Force Docker image rebuild for the command         |
 
-See `.env.example` for a complete example.
+See `.env.example` for a common example.
 
 ## Usage
 
