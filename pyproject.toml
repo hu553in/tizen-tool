@@ -43,13 +43,13 @@ classifiers = [
 ]
 
 dependencies = [
-  "click>=8.1.8",
+  "click>=8.4.2",
   "defusedxml>=0.7.1",
   "ifaddr>=0.2.0",
   "pathspec>=1.0.4",
   "pydantic>=2.13.4",
   "pydantic-settings>=2.14.2",
-  "typer>=0.26.7,<0.27.0",
+  "typer>=0.26.8,<0.27.0",
 ]
 
 [project.scripts]
@@ -76,8 +76,8 @@ dev = [
   "deptry>=0.25.1",
   "prek>=0.4.5",
   "pysentry-rs>=0.4.7",
-  "ruff>=0.15.18",
-  "ty>=0.0.51",
+  "ruff>=0.15.20",
+  "ty>=0.0.55",
 ]
 
 [tool.uv]
