@@ -18,6 +18,7 @@ CLI for building, re-signing, and installing Tizen web packages through Dockeriz
 - Python 3.10+
 - Docker with Linux image support
 - `uv`
+- Bun for repository tooling
 - Tizen signing profile directory with `profiles.xml`
 - Tizen Studio version 3.7 or newer configured through `TIZEN_VERSION`
 
@@ -98,7 +99,9 @@ uv run tizen-tool --help
 
 ```bash
 make install-deps
+uv run prek install
 make check
+make check-fix
 make build
 ```
 
@@ -106,5 +109,11 @@ Focused checks:
 
 ```bash
 make lint
+make lint-fix
 make check-types
+make check-deps
+make check-vulns
+make check-unused
+make check-security
+make check-build
 ```

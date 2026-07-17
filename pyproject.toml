@@ -1,46 +1,10 @@
 [project]
 name = "tizen-tool"
-version = "0.2.6"
+version = "0.1.0"
 description = "CLI for building, re-signing, and installing Tizen web packages through Dockerized Tizen Studio."
+authors = [{ name = "Ruslan Khasanshin" }]
 readme = "README.md"
 requires-python = ">=3.10"
-license = "MIT"
-license-files = ["LICENSE"]
-authors = [{ name = "Ruslan Khasanshin" }]
-maintainers = [{ name = "Ruslan Khasanshin" }]
-
-keywords = [
-  "tizen",
-  "tizen-studio",
-  "tizen-tv",
-  "samsung-tv",
-  "cli",
-  "docker",
-  "wgt",
-  "web-app",
-  "packaging",
-  "signing",
-  "deployment",
-  "developer-tools",
-  "automation",
-]
-
-classifiers = [
-  "Development Status :: 4 - Beta",
-  "Environment :: Console",
-  "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: 3.13",
-  "Programming Language :: Python :: 3.14",
-  "Topic :: Software Development",
-  "Topic :: Software Development :: Build Tools",
-  "Topic :: Utilities",
-]
 
 dependencies = [
   "click>=8.4.2",
@@ -55,11 +19,6 @@ dependencies = [
 [project.scripts]
 tizen-tool = "tizen_tool.cli:main"
 
-[project.urls]
-Homepage = "https://github.com/hu553in/tizen-tool"
-Repository = "https://github.com/hu553in/tizen-tool"
-Issues = "https://github.com/hu553in/tizen-tool/issues"
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -68,7 +27,10 @@ build-backend = "hatchling.build"
 packages = ["src/tizen_tool"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/src/tizen_tool", "/README.md", "/LICENSE", "/pyproject.toml"]
+include = ["/src/tizen_tool", "/README.md", "/pyproject.toml"]
+
+[project.urls]
+Repository = "https://github.com/hu553in/tizen-tool"
 
 [dependency-groups]
 dev = [
@@ -78,27 +40,45 @@ dev = [
   "pysentry-rs>=0.4.7",
   "ruff>=0.15.20",
   "ty>=0.0.56",
+  "vulture>=2.16",
 ]
 
 [tool.uv]
-default-groups = ["dev"]
 link-mode = "copy"
-package = true
 
 [tool.ruff]
 target-version = "py310"
 line-length = 100
-extend-exclude = [".venv"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "ARG", "PL", "RUF"]
+select = [
+  "E",
+  "F",
+  "I",
+  "UP",
+  "B",
+  "SIM",
+  "ARG",
+  "PL",
+  "RUF",
+  "C4",
+  "FA",
+  "N",
+  "PERF",
+  "W",
+  "PGH004",
+  "T10",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/tizen_tool/installer_cache.py" = ["PERF203"]
+"src/tizen_tool/project_files.py" = ["N817"]
+"src/tizen_tool/settings.py" = ["N804"]
 
 [tool.ruff.lint.isort]
 split-on-trailing-comma = false
 
 [tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
 skip-magic-trailing-comma = true
 
 [tool.pysentry.defaults]
@@ -114,6 +94,3 @@ known_first_party = ["tizen_tool"]
 paths = ["src"]
 min_confidence = 100
 sort_by_size = true
-
-[tool.bandit.assert_used]
-skips = ["*_test.py", "*test_*.py"]
