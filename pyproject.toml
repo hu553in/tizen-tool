@@ -13,7 +13,7 @@ dependencies = [
   "pathspec>=1.1.1",
   "pydantic>=2.13.4",
   "pydantic-settings>=2.14.2",
-  "typer>=0.26.8,<0.27.0",
+  "typer>=0.27.0,<0.28.0",
 ]
 
 [project.scripts]
