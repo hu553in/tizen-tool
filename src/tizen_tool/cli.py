@@ -124,7 +124,7 @@ def get_lan_ips_command() -> None:
 
 
 @app.command("build", help="Build a .wgt package from a Tizen web app directory.")
-def build_command(  # noqa: PLR0913
+def build_command(  # noqa: PLR0913, PLR0917
     src_dir: BuildSrcDirArgument = None,
     buildignore_file: BuildIgnoreFileArgument = None,
     rebuild: BuildRebuildOption = None,
@@ -149,7 +149,7 @@ def build_command(  # noqa: PLR0913
 
 
 @app.command("install", help="Install a .wgt package on a TV over sdb.")
-def install_command(  # noqa: PLR0913
+def install_command(  # noqa: PLR0913, PLR0917
     package_file: InstallPackageFileArgument = None,
     rebuild: InstallRebuildOption = None,
     tizen_version: TizenVersionOption = None,
@@ -170,7 +170,7 @@ def install_command(  # noqa: PLR0913
 
 
 @app.command("resign", help="Re-sign an existing .wgt package.")
-def resign_command(  # noqa: PLR0913
+def resign_command(  # noqa: PLR0913, PLR0917
     package_file: ResignPackageFileArgument = None,
     rebuild: ResignRebuildOption = None,
     tizen_version: TizenVersionOption = None,
