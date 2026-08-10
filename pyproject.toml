@@ -12,8 +12,8 @@ dependencies = [
   "ifaddr>=0.2.0",
   "pathspec>=1.1.1",
   "pydantic>=2.13.4",
-  "pydantic-settings>=2.14.2",
-  "typer>=0.27.0,<0.28.0",
+  "pydantic-settings>=2.15.0",
+  "typer>=0.27.1,<0.28.0",
 ]
 
 [project.scripts]
@@ -36,10 +36,10 @@ Repository = "https://github.com/hu553in/tizen-tool"
 dev = [
   "bandit>=1.9.4",
   "deptry>=0.25.1",
-  "prek>=0.4.11",
+  "prek>=0.4.12",
   "pysentry-rs>=0.4.9",
-  "ruff>=0.16.1",
-  "ty>=0.0.65",
+  "ruff>=0.16.2",
+  "ty>=0.0.69",
   "vulture>=2.16",
 ]
 
