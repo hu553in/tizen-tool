@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ipaddress
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any
 
 from pydantic import (
     AliasChoices,
@@ -21,7 +21,6 @@ from .paths import cache_root, env_file_path, working_directory
 DEFAULT_TV_PORT = 26101
 MAX_PORT = 65535
 MIN_SUPPORTED_TIZEN_VERSION = (3, 7)
-SettingsT = TypeVar("SettingsT", bound="CommonSettings")
 
 
 def resolve_working_path(value: Any) -> Path:
@@ -237,7 +236,9 @@ def format_validation_error(exc: ValidationError) -> str:
     return "Invalid configuration:\n- " + "\n- ".join(messages)
 
 
-def load_settings(settings_type: type[SettingsT], **overrides: Any) -> SettingsT:
+def load_settings[SettingsT: CommonSettings](
+    settings_type: type[SettingsT], **overrides: Any
+) -> SettingsT:
     normalized_overrides = {key: value for key, value in overrides.items() if value is not None}
 
     try:
