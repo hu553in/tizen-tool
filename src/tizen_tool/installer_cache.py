@@ -66,7 +66,7 @@ def load_cached_installer(version_cache_dir: Path) -> CachedInstaller | None:
     if metadata_path.is_file():
         try:
             metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+        except json.JSONDecodeError, OSError:
             return None
 
         if isinstance(metadata, dict):
