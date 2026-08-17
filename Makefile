@@ -52,12 +52,20 @@ check-build:
 	trap 'rm -rf "$$output_dir"' EXIT; \
 	uv build --out-dir "$$output_dir"
 
+.PHONY: check-renovate
+check-renovate:
+	bunx --package renovate renovate-config-validator --strict --no-global renovate.json
+
+.PHONY: check-hooks
+check-hooks:
+	uv run prek validate-config prek.toml
+
 .PHONY: check-workflows
 check-workflows:
 	$(ACTIONLINT)
 
 .PHONY: check
-check: lint check-types check-deps check-vulns check-unused check-security check-build check-workflows
+check: lint check-hooks check-types check-deps check-vulns check-unused check-security check-build check-renovate check-workflows
 
 .PHONY: check-fix
 check-fix: lint-fix

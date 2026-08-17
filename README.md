@@ -15,14 +15,12 @@ CLI for building, re-signing, and installing Tizen web packages through Dockeriz
 
 ## Requirements
 
-- Python 3.10+
+- Python
 - Docker with Linux image support
 - `uv`
 - Bun for repository tooling
 - Tizen signing profile directory with `profiles.xml`
 - Tizen Studio version 3.7 or newer configured through `TIZEN_VERSION`
-
-Local development uses Python 3.14 from `.python-version`.
 
 ## Setup
 
