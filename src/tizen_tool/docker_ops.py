@@ -100,6 +100,8 @@ def ensure_image(settings: CommonSettings, *, force_rebuild: bool) -> None:
             [
                 "docker",
                 "build",
+                "--pull",
+                "--no-cache",
                 "--progress=plain",
                 "-t",
                 settings.image_tag,

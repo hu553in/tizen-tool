@@ -22,6 +22,7 @@ ENV PATH="$PATH:/home/tizen/tizen-studio/tools:/home/tizen/tizen-studio/tools/id
 RUN --mount=type=cache,target=/var/cache/apt \
   --mount=type=cache,target=/var/lib/apt/lists \
   apt-get update && \
+  apt-get upgrade -y && \
   apt-get install -y --no-install-recommends \
   ca-certificates \
   python3 \

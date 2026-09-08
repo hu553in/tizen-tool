@@ -3,7 +3,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from defusedxml import ElementTree as ET
+from defusedxml import ElementTree
 from pathspec import PathSpec
 
 from .errors import ToolError
@@ -14,8 +14,8 @@ def validate_profiles(profiles_dir: Path, profile: str) -> None:
     if not profiles_xml.is_file():
         raise ToolError(f"profiles.xml is not found: {profiles_xml}")
     try:
-        root = ET.parse(profiles_xml).getroot()
-    except ET.ParseError as exc:
+        root = ElementTree.parse(profiles_xml).getroot()
+    except ElementTree.ParseError as exc:
         raise ToolError(f"Failed to parse profiles.xml: {exc}") from exc
 
     for element in root.iter():

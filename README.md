@@ -92,6 +92,7 @@ uv run tizen-tool --help
 - Installers are cached under `<CACHE_DIR>/installers/`
 - Temporary files are stored under `<CACHE_DIR>/tmp/`
 - Docker images are reused while their identifying labels match the requested configuration
+- Use `--rebuild` to refresh the base image and rebuild all layers
 
 ## Development
 
