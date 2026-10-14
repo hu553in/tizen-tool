@@ -18,8 +18,8 @@ CLI for building, re-signing, and installing Tizen web packages through Dockeriz
 - Python
 - Docker with Linux image support
 - `uv`
-- Bun for repository tooling
-- Tizen signing profile directory with `profiles.xml`
+- Make and Bun for repository tooling
+- Tizen signing profile directory with `profiles.xml` for building or re-signing
 - Tizen Studio version 3.7 or newer configured through `TIZEN_VERSION`
 
 ## Setup
@@ -80,7 +80,7 @@ tizen-tool install /path/to/app.wgt --tv-ip 192.168.1.100
 Run from a checkout:
 
 ```bash
-uv run tizen-tool --help
+uv run --locked tizen-tool --help
 ```
 
 ## Runtime behavior
@@ -98,9 +98,14 @@ uv run tizen-tool --help
 
 ```bash
 make install-deps
-uv run prek install
+uv run --locked prek install
 make check
 make check-fix
+```
+
+Build the package into `dist/`:
+
+```bash
 make build
 ```
 
@@ -109,10 +114,17 @@ Focused checks:
 ```bash
 make lint
 make lint-fix
+make check-hooks
 make check-types
 make check-deps
 make check-vulns
 make check-unused
 make check-security
 make check-build
+make check-renovate
+make check-workflows
 ```
+
+Ruff infers the host CLI's Python version from `requires-python`. The bundled Ubuntu installer has a
+per-file Python 3.14 target matching its separate runtime; `make check-types` also checks it with
+that version.

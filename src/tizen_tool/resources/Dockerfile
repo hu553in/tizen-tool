@@ -7,23 +7,22 @@ ARG REQUIRED_PACKAGES_JSON
 ARG TIZEN_INSTALLER_SHA256
 ARG BUILD_CONTEXT_FINGERPRINT
 
-ENV REQUIRED_PACKAGES_JSON=$REQUIRED_PACKAGES_JSON
-ENV TIZEN_INSTALLER_SHA256=$TIZEN_INSTALLER_SHA256
+ENV DEBIAN_FRONTEND=noninteractive \
+  PATH="$PATH:/home/tizen/tizen-studio/tools:/home/tizen/tizen-studio/tools/ide/bin" \
+  REQUIRED_PACKAGES_JSON=$REQUIRED_PACKAGES_JSON \
+  TIZEN_INSTALLER_SHA256=$TIZEN_INSTALLER_SHA256 \
+  TZ=Etc/UTC
 
 LABEL com.github.hu553in.tizen.tool.version="$TIZEN_VERSION"
 LABEL com.github.hu553in.tizen.tool.required-packages="$REQUIRED_PACKAGES_JSON"
 LABEL com.github.hu553in.tizen.tool.installer-sha256="$TIZEN_INSTALLER_SHA256"
 LABEL com.github.hu553in.tizen.tool.build-context-fingerprint="$BUILD_CONTEXT_FINGERPRINT"
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Etc/UTC
-ENV PATH="$PATH:/home/tizen/tizen-studio/tools:/home/tizen/tizen-studio/tools/ide/bin"
-
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-  apt-get update && \
-  apt-get upgrade -y && \
-  apt-get install -y --no-install-recommends \
+  apt-get update \
+  && apt-get upgrade -y --no-install-recommends \
+  && apt-get install -y --no-install-recommends \
   ca-certificates \
   python3 \
   unzip

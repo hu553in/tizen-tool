@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "CLI for building, re-signing, and installing Tizen web packages through Dockerized Tizen Studio."
 authors = [{ name = "Ruslan Khasanshin" }]
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.15.0"
 
 dependencies = [
   "click>=8.5.0",
@@ -39,7 +39,7 @@ dev = [
   "prek>=0.5.5",
   "pysentry-rs>=0.5.0",
   "ruff>=0.17.0",
-  "ty>=0.0.86",
+  "ty>=0.0.87",
   "vulture>=2.16",
 ]
 
@@ -47,8 +47,11 @@ dev = [
 link-mode = "copy"
 
 [tool.ruff]
-target-version = "py314"
 line-length = 100
+
+[tool.ruff.per-file-target-version]
+# The Ubuntu installer uses distro Python independently of the host CLI.
+"src/tizen_tool/resources/install_tizen_studio.py" = "py314"
 
 [tool.ruff.lint]
 select = [

@@ -109,9 +109,6 @@ class CommonSettings(BaseSettings):
     tizen_version: str = Field(validation_alias="TIZEN_VERSION")
     required_packages: list[str] = Field(validation_alias="REQUIRED_PACKAGES")
     cache_dir: Path = Field(default_factory=cache_root, validation_alias="CACHE_DIR")
-    profiles_dir: DirectoryPath | None = Field(default=None, validation_alias="PROFILES_DIR")
-    profile: str | None = Field(default=None, validation_alias="PROFILE")
-    tv_ip: str | None = Field(default=None, validation_alias="TV_IP")
 
     @computed_field
     @property
@@ -153,6 +150,11 @@ class CommonSettings(BaseSettings):
             return cache_root()
         return resolve_working_path(value)
 
+
+class SigningSettings(CommonSettings):
+    profiles_dir: DirectoryPath = Field(validation_alias="PROFILES_DIR")
+    profile: str = Field(validation_alias="PROFILE")
+
     @field_validator("profiles_dir", mode="before")
     @classmethod
     def normalize_profiles_dir(_cls, value: Any) -> Path | None:  # noqa: N804 - unused class argument
@@ -161,14 +163,12 @@ class CommonSettings(BaseSettings):
         return resolve_working_path(value)
 
 
-class BuildSettings(CommonSettings):
+class BuildSettings(SigningSettings):
     src_dir: DirectoryPath = Field(validation_alias=AliasChoices("BUILD_SRC_DIR", "SRC_DIR"))
     buildignore_file: FilePath | None = Field(
         default=None, validation_alias=AliasChoices("BUILDIGNORE_FILE", "BUILD_IGNORE_FILE")
     )
     rebuild: bool = Field(default=False, validation_alias=AliasChoices("BUILD_REBUILD", "REBUILD"))
-    profiles_dir: DirectoryPath = Field(validation_alias="PROFILES_DIR")
-    profile: str = Field(validation_alias="PROFILE")
 
     @field_validator("src_dir", mode="before")
     @classmethod
@@ -208,13 +208,11 @@ class InstallSettings(CommonSettings):
         return normalize_tv_serial(value)
 
 
-class ResignSettings(CommonSettings):
+class ResignSettings(SigningSettings):
     package_file: FilePath = Field(
         validation_alias=AliasChoices("RESIGN_PACKAGE_FILE", "PACKAGE_FILE")
     )
     rebuild: bool = Field(default=False, validation_alias=AliasChoices("RESIGN_REBUILD", "REBUILD"))
-    profiles_dir: DirectoryPath = Field(validation_alias="PROFILES_DIR")
-    profile: str = Field(validation_alias="PROFILE")
 
     @field_validator("package_file", mode="before")
     @classmethod
