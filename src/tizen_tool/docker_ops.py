@@ -210,6 +210,10 @@ package_name="$1"
 tv_serial="$2"
 package_dir="$3"
 
+# Tizen CLI extracts config.xml beside the package.
+install_dir="$(mktemp -d)"
+cp -- "$package_dir/$package_name" "$install_dir/$package_name"
+
 cleanup() {
   sdb disconnect "$tv_serial" >/dev/null 2>&1 || true
 }
@@ -219,7 +223,7 @@ if ! sdb devices | awk 'NR > 1 {print $1}' | grep -Fx -- "$tv_serial" >/dev/null
   sdb connect "$tv_serial"
 fi
 
-tizen install --name "$package_name" --serial "$tv_serial" -- "$package_dir"
+tizen install --name "$package_name" --serial "$tv_serial" -- "$install_dir"
 """.strip()
 
     log_step(f"Installing package on TV {settings.tv_ip}: {settings.package_file}")

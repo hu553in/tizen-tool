@@ -17,11 +17,11 @@ jobs:
       contents: read
     uses: hu553in/common-things/.github/workflows/check-python.yml@main
 
+  # The build context needs a locally cached Tizen installer that is not stored in Git.
   docker:
     permissions:
       contents: read
     uses: hu553in/common-things/.github/workflows/check-docker.yml@main
-    # The build context needs a locally cached Tizen installer that is not stored in Git.
     with:
       context: ./src/tizen_tool/resources
       file: ./src/tizen_tool/resources/Dockerfile
