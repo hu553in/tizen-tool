@@ -5,19 +5,11 @@ Thumbs.db
 !.env.example
 !.env.example.*
 .venv/
-.pytest_cache/
 .ruff_cache/
 .vscode/
 .idea/
 *.iml
 __pycache__/
 
-.coverage
-.coverage.*
-coverage.xml
-htmlcov/
-
-build/
 dist/
-*.egg-info/
 *.py[cod]

@@ -15,8 +15,8 @@ CLI for building, re-signing, and installing Tizen web packages through Dockeriz
 
 ## Requirements
 
-- Python
-- Docker with Linux image support
+- Python 3.15 or newer
+- Docker with `linux/amd64` support. Enable AMD64 emulation on ARM hosts.
 - `uv`
 - Make and Bun for repository tooling
 - Tizen signing profile directory with `profiles.xml` for building or re-signing
@@ -80,7 +80,7 @@ tizen-tool install /path/to/app.wgt --tv-ip 192.168.1.100
 Run from a checkout:
 
 ```bash
-uv run --locked tizen-tool --help
+uv run --locked --no-dev tizen-tool --help
 ```
 
 ## Runtime behavior
@@ -97,11 +97,11 @@ uv run --locked tizen-tool --help
 ## Development
 
 ```bash
-make install-deps
-uv run --locked prek install
+bunx lefthook install
 make check
-make check-fix
 ```
+
+Run `make check-fix` to apply automatic fixes and then run the checks.
 
 Build the package into `dist/`:
 

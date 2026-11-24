@@ -36,7 +36,6 @@ include = ["/src/tizen_tool", "/README.md", "/pyproject.toml"]
 dev = [
   "bandit>=1.9.4",
   "deptry>=0.25.1",
-  "prek>=0.5.11",
   "pysentry-rs>=0.5.0",
   "ruff>=0.17.6",
   "ty>=0.0.107",
